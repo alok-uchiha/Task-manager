@@ -1,5 +1,5 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif; min-height: 100vh; overflow-x: hidden; position: relative; background: linear-gradient(135deg, #0f0c29 0%, #1a1a3e 30%, #24243e 60%, #1a1a2e 100%); color: #fff; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif; min-height: 100vh; overflow-x: hidden; position: relative; background: #0a0a14;  color: #fff; }
 
 .bg-wrapper { position: fixed; inset: 0; z-index: 0; overflow: hidden; }
 .bg-image { position: absolute; inset: 0; background-size: cover; background-position: center; filter: brightness(0.9); }

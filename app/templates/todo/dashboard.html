@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>NORX · Tasks</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/todo.css') }}">
+</head>
+<body>
+
+  <!-- Background -->
+  <div class="bg-wrapper">
+    <div class="bg-image" style="background-image: url('{{ url_for('static', filename='images/bg_todo.jpg') }}');"></div>
+    <div class="bg-overlay"></div>
+  </div>
+
+  <!-- TOP CAPSULE NAV -->
+  <nav class="top-nav glass-refractive">
+    <a href="{{ url_for('main.home') }}" class="nav-brand">
+      <i class="fas fa-eye"></i><span>NORX</span>
+    </a>
+    <div class="nav-actions">
+      <a href="{{ url_for('todo.dashboard') }}" class="nav-link active">Tasks</a>
+      <a href="#" class="nav-link">Projects</a>
+      <a href="#" class="nav-link">Calendar</a>
+    </div>
+     <div class="profile-wrap">
+  <button class="nav-avatar" id="profileBtn">
+    <i class="fas fa-user-circle"></i>
+  </button>
+  <div class="profile-dropdown" id="profileDropdown">
+  <div class="profile-header">
+    <div class="profile-avatar-icon">
+      <i class="fas fa-user-circle"></i>
+    </div>
+    <div class="profile-info">
+      <span class="profile-name">{{ current_user.username }}</span>
+      <span class="profile-email">{{ current_user.email }}</span>
+    </div>
+  </div>
+  <div class="profile-divider"></div>
+  <a href="#" class="profile-link"><i class="fas fa-cog"></i> Settings</a>
+  <a href="{{ url_for('auth.logout') }}" class="profile-link logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+</div>
+</div>
+  </nav>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <a href="{{ url_for('main.home') }}" class="sb-brand">
+      <i class="fas fa-eye"></i><span class="sb-label">NORX</span>
+    </a>
+    <nav class="sb-nav">
+      <a href="{{ url_for('todo.dashboard') }}" class="sb-link active">
+        <i class="fas fa-check-circle"></i><span class="sb-label">Tasks</span>
+      </a>
+      <a href="#" class="sb-link">
+        <i class="fas fa-folder"></i><span class="sb-label">Projects</span>
+      </a>
+      <a href="#" class="sb-link">
+        <i class="fas fa-calendar"></i><span class="sb-label">Calendar</span>
+      </a>
+    </nav>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main-content">
+    
+    <div class="topbar">
+      <h2>My Tasks</h2>
+      <div class="topbar-right">
+        <div class="search-wrap">
+          <i class="fas fa-search"></i>
+          <input type="text" placeholder="Search..." id="searchInput">
+        </div>
+        <select class="sort-select">
+          <option>Due Date</option><option>Priority</option><option>Status</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Filter Bar -->
+<div class="filter-bar">
+  <div class="filter-tabs">
+    <button class="filter-btn active" data-filter="all">All</button>
+    <button class="filter-btn" data-filter="today">Today</button>
+    <button class="filter-btn" data-filter="tomorrow">Tomorrow</button>
+    <button class="filter-btn" data-filter="week">This Week</button>
+    <button class="filter-btn" data-filter="no-date">No Date</button>
+    <button class="filter-btn custom-date-btn" id="customDateBtn">
+      <i class="fas fa-calendar"></i> Custom
+    </button>
+  </div>
+</div>
+
+
+    <div class="task-list">
+      {% for todo in todos %}
+      <div class="task-row glass-refractive" data-id="{{ todo.id }}" data-status="{{ todo.status }}" data-priority="{{ todo.priority }}">
+        <button class="task-check {% if todo.status == 'done' %}checked{% endif %}" onclick="toggleTodo({{ todo.id }}, this)">
+          <i class="fas fa-check"></i>
+        </button>
+        <div class="task-info">
+          <span class="task-title {% if todo.status == 'done' %}done{% endif %}">{{ todo.title }}</span>
+          <div class="task-tags">
+            <span class="tag {{ todo.priority }}">{{ todo.priority }}</span>
+            <span class="tag status {{ todo.status }}">{{ todo.status|replace('_',' ')|title }}</span>
+          </div>
+        </div>
+        <div class="task-meta">
+          <span class="task-date"><i class="fas fa-calendar-alt"></i> {{ todo.due_date.strftime('%b %d, %Y') if todo.due_date else '—' }}</span>
+          <button class="task-delete" onclick="deleteTodo({{ todo.id }}, this)"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% if not todos %}
+    <div class="empty-state">
+      <i class="fas fa-eye"></i><h3>No tasks yet</h3><p>Plan your forge</p>
+    </div>
+    {% endif %}
+
+    
+  </main>
+
+  <!-- CREATE POPUP -->
+  <div class="popup-overlay" id="popupOverlay">
+    <div class="popup-card glass-refractive">
+      <button class="popup-close" id="closePopupBtn"><i class="fas fa-times"></i></button>
+      <h2>New Task</h2>
+      <form id="todoForm">
+        {{ form.hidden_tag() }}
+        <div class="input-group"><i class="fas fa-pen"></i>{{ form.title(class="form-input", placeholder="Task title") }}</div>
+        <div class="input-group"><i class="fas fa-align-left"></i>{{ form.description(class="form-input", placeholder="Description") }}</div>
+        <div class="input-row">
+          <div class="input-group half"><i class="fas fa-flag"></i>{{ form.status(class="form-select") }}</div>
+          <div class="input-group half"><i class="fas fa-fire"></i>{{ form.priority(class="form-select") }}</div>
+        </div>
+        <div class="input-group"><i class="fas fa-calendar"></i>{{ form.due_date(class="form-input", placeholder="YYYY-MM-DD") }}</div>
+        <button type="submit" class="submit-btn">Add Task</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- DETAIL POPUP -->
+  <div class="popup-overlay" id="detailOverlay">
+    <div class="popup-card glass-refractive detail-card">
+      <button class="popup-close" onclick="document.getElementById('detailOverlay').classList.remove('show')"><i class="fas fa-times"></i></button>
+      <div class="detail-header">
+        <span class="detail-priority" id="detailPriority"></span>
+        <h2 id="detailTitle"></h2>
+      </div>
+      <div class="detail-body">
+        <div class="detail-row"><i class="fas fa-align-left"></i><p id="detailDesc"></p></div>
+        <div class="detail-row"><i class="fas fa-flag"></i><span id="detailStatus"></span></div>
+        <div class="detail-row"><i class="fas fa-calendar"></i><span id="detailDue"></span></div>
+        <div class="detail-row"><i class="fas fa-clock"></i><span id="detailCreated"></span></div>
+      </div>
+      <div class="detail-actions">
+        <button class="detail-edit-btn" id="detailEditBtn"><i class="fas fa-pen"></i> Edit</button>
+        <button class="detail-delete-btn" id="detailDeleteBtn"><i class="fas fa-trash"></i> Delete</button>
+      </div>
+    </div>
+  </div>
+  <!-- BOTTOM BAR -->
+<div class="bottom-bar glass-refractive">
+  <span class="bottom-count">{{ todos|length }} tasks</span>
+  <button class="add-btn" id="openPopupBtn"><i class="fas fa-plus"></i>Add Task</button>
+  <div class="bottom-right">
+    <span class="bottom-page">Page 1 of 1</span>
+  </div>
+</div>
+<!-- Mini Calendar Dropdown -->
+<div class="mini-calendar glass-refractive" id="miniCalendar">
+  <div class="cal-header">
+    <button id="calPrev"><i class="fas fa-chevron-left"></i></button>
+    <span id="calMonthYear"></span>
+    <button id="calNext"><i class="fas fa-chevron-right"></i></button>
+  </div>
+  <div class="cal-weekdays">
+    <span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span><span>Su</span>
+  </div>
+  <div class="cal-grid" id="calGrid"></div>
+  <div class="cal-quick">
+    <button class="cal-quick-btn" data-quick="today">Today</button>
+    <button class="cal-quick-btn" data-quick="tomorrow">Tomorrow</button>
+  </div>
+  <button class="cal-clear" id="calClear">Clear</button>
+</div>
+
+
+  <script>
+
+
+  // Create popup
+  const overlay = document.getElementById('popupOverlay');
+  document.getElementById('openPopupBtn').addEventListener('click', () => overlay.classList.add('show'));
+  document.getElementById('closePopupBtn').addEventListener('click', () => overlay.classList.remove('show'));
+  overlay.addEventListener('click', e => { if(e.target === overlay) overlay.classList.remove('show'); });
+
+  // AJAX Create
+  document.getElementById('todoForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const fd = new FormData(this);
+    const res = await fetch("{{ url_for('todo.create') }}", { method: 'POST', body: fd });
+    const data = await res.json();
+    if(data.success) { overlay.classList.remove('show'); this.reset(); location.reload(); }
+  });
+
+  // Task data
+  const todosData = [
+    {% for todo in todos %}
+    { id: {{ todo.id }}, title: "{{ todo.title|replace('"','\\"') }}", description: "{{ todo.description|replace('"','\\"') if todo.description else '' }}", status: "{{ todo.status }}", priority: "{{ todo.priority }}", due_date: "{{ todo.due_date.strftime('%b %d, %Y') if todo.due_date else 'No date' }}", created_on: "{{ todo.created_on.strftime('%b %d, %Y') }}", raw_due_date: "{{ todo.due_date.strftime('%Y-%m-%d') if todo.due_date else 'none' }}" },
+    {% endfor %}
+  ];
+
+  // Detail popup
+  const detailOverlay = document.getElementById('detailOverlay');
+  document.querySelectorAll('.task-row').forEach(row => {
+    row.style.cursor = 'pointer';
+    row.addEventListener('click', function(e) {
+      if(e.target.closest('.task-check') || e.target.closest('.task-delete')) return;
+      const todo = todosData.find(t => t.id === parseInt(this.dataset.id));
+      if(!todo) return;
+      document.getElementById('detailPriority').className = 'detail-priority ' + todo.priority;
+      document.getElementById('detailPriority').textContent = todo.priority.toUpperCase();
+      document.getElementById('detailTitle').textContent = todo.title;
+      document.getElementById('detailDesc').textContent = todo.description || 'No description';
+      document.getElementById('detailStatus').textContent = todo.status.replace('_',' ').toUpperCase();
+      document.getElementById('detailDue').textContent = todo.due_date;
+      document.getElementById('detailCreated').textContent = 'Created: ' + todo.created_on;
+      document.getElementById('detailEditBtn').onclick = () => { window.location.href = '/todo/' + todo.id + '/edit'; };
+      document.getElementById('detailDeleteBtn').onclick = () => { deleteFromDetail(todo.id); };
+      detailOverlay.classList.add('show');
+    });
+  });
+  detailOverlay.addEventListener('click', e => { if(e.target === detailOverlay) detailOverlay.classList.remove('show'); });
+
+  async function deleteFromDetail(id) {
+    await fetch(`/todo/${id}/delete`, { method: 'POST' });
+    detailOverlay.classList.remove('show');
+    const row = document.querySelector(`.task-row[data-id="${id}"]`);
+    if(row) { row.style.opacity = '0'; setTimeout(() => row.remove(), 300); }
+  }
+
+  // Toggle
+  async function toggleTodo(id, btn) {
+    const res = await fetch(`/todo/${id}/toggle`, { method: 'POST' });
+    const data = await res.json();
+    if(data.success) { btn.classList.toggle('checked'); btn.parentElement.querySelector('.task-title').classList.toggle('done'); }
+  }
+
+  // Delete
+  async function deleteTodo(id, btn) {
+    const row = btn.closest('.task-row');
+    row.style.opacity = '0';
+    setTimeout(async () => { await fetch(`/todo/${id}/delete`, { method: 'POST' }); row.remove(); }, 300);
+  }
+
+  // Search
+  document.getElementById('searchInput').addEventListener('input', function() {
+    const t = this.value.toLowerCase();
+    document.querySelectorAll('.task-row').forEach(r => {
+      r.style.display = r.querySelector('.task-title').textContent.toLowerCase().includes(t) ? '' : 'none';
+    });
+  });
+
+// ========== FILTER + CALENDAR ==========
+let customDate = null;
+let activeFilter = 'all';
+
+// Render calendar
+function renderCal(date) {
+  document.getElementById('calMonthYear').textContent = date.toLocaleString('default', { month: 'long', year: 'numeric' });
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+  const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+  const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+  let startDay = firstDay.getDay() || 7;
+  for(let i = 1; i < startDay; i++) grid.innerHTML += '<span></span>';
+  for(let d = 1; d <= lastDay.getDate(); d++) {
+    const span = document.createElement('span');
+    span.textContent = d;
+    span.classList.add('cal-day');
+    const check = new Date(date.getFullYear(), date.getMonth(), d);
+    if(customDate && formatDate(check) === customDate) span.classList.add('selected');
+    if(formatDate(check) === formatDate(new Date())) span.classList.add('today');
+    span.addEventListener('click', () => {
+      customDate = formatDate(check);
+      activeFilter = 'custom';
+      updateFilterUI();
+      applyFilter();
+      document.getElementById('miniCalendar').classList.remove('show');
+    });
+    grid.appendChild(span);
+  }
+}
+function formatDate(d) { return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+
+let calDate = new Date();
+if(document.getElementById('miniCalendar')) {
+  renderCal(calDate);
+}
+document.getElementById('calPrev').addEventListener('click', () => { calDate.setMonth(calDate.getMonth()-1); renderCal(calDate); });
+document.getElementById('calNext').addEventListener('click', () => { calDate.setMonth(calDate.getMonth()+1); renderCal(calDate); });
+document.getElementById('calClear').addEventListener('click', () => { customDate = null; activeFilter = 'all'; updateFilterUI(); applyFilter(); document.getElementById('miniCalendar').classList.remove('show'); });
+
+document.querySelectorAll('.cal-quick-btn').forEach(b => {
+  b.addEventListener('click', function() {
+    const today = new Date();
+    if(this.dataset.quick === 'today') customDate = formatDate(today);
+    if(this.dataset.quick === 'tomorrow') { const t = new Date(today); t.setDate(t.getDate()+1); customDate = formatDate(t); }
+    activeFilter = 'custom';
+    updateFilterUI();
+    applyFilter();
+    document.getElementById('miniCalendar').classList.remove('show');
+  });
+});
+
+// Custom date button
+document.getElementById('customDateBtn').addEventListener('click', function(e) {
+  e.stopPropagation();
+  document.getElementById('miniCalendar').classList.toggle('show');
+});
+document.addEventListener('click', function(e) {
+  if(!e.target.closest('#miniCalendar') && !e.target.closest('#customDateBtn')) {
+    document.getElementById('miniCalendar').classList.remove('show');
+  }
+});
+
+// Filter buttons
+document.querySelectorAll('.filter-btn[data-filter]').forEach(btn => {
+  btn.addEventListener('click', function() {
+    if(this.dataset.filter === 'custom') return;
+    activeFilter = this.dataset.filter;
+    customDate = null;
+    updateFilterUI();
+    applyFilter();
+    document.getElementById('miniCalendar').classList.remove('show');
+  });
+});
+
+function updateFilterUI() {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  if(activeFilter === 'custom') {
+    document.getElementById('customDateBtn').classList.add('active');
+  } else {
+    document.querySelector(`.filter-btn[data-filter="${activeFilter}"]`)?.classList.add('active');
+  }
+}
+
+function applyFilter() {
+  const today = formatDate(new Date());
+  const tomorrow = formatDate(new Date(Date.now()+86400000));
+  const weekEnd = formatDate(new Date(Date.now()+7*86400000));
+  document.querySelectorAll('.task-row').forEach(row => {
+    const todo = todosData.find(t => t.id === parseInt(row.dataset.id));
+    if(!todo) return;
+    let show = true;
+    if(activeFilter === 'today') show = todo.raw_due_date === today;
+    else if(activeFilter === 'tomorrow') show = todo.raw_due_date === tomorrow;
+    else if(activeFilter === 'week') show = todo.raw_due_date >= today && todo.raw_due_date <= weekEnd;
+    else if(activeFilter === 'no-date') show = todo.raw_due_date === 'none';
+    else if(activeFilter === 'custom') show = todo.raw_due_date === customDate;
+    row.style.display = show ? '' : 'none';
+  });
+}
+
+// Profile dropdown
+const profileBtn = document.getElementById('profileBtn');
+const profileDropdown = document.getElementById('profileDropdown');
+
+if (profileBtn && profileDropdown) {
+
+  profileBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    profileDropdown.classList.toggle('show');
+  });
+
+  profileDropdown.addEventListener('click', function(e) {
+    e.stopPropagation();
+  });
+
+  document.addEventListener('click', function() {
+    profileDropdown.classList.remove('show');
+  });
+
+}
+
+  </script>
+</body>
+</html>

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>NORX · No Limits</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+</head>
+<body>
+
+  <!-- Background -->
+  <div class="bg-wrapper">
+    <div class="bg-image" style="background-image: url('{{ url_for('static', filename='images/bg_home.jpg') }}');"></div>
+    <div class="bg-overlay"></div>
+    <div class="frost-particles" id="frostParticles"></div>
+  </div>
+
+ <!-- Navigation -->
+<div class="nav-container" id="navContainer">
+  <nav class="capsule-nav glass-refractive" id="capsuleNav">
+    <div class="nav-logo">
+      <div class="logo-icon-wrap">
+        <svg width="300" height="360" viewBox="0 0 300 360"><rect width="300" height="360" fill="#020202"/><path d="M18,148 Q42,88 150,74 Q258,88 282,148 Q256,210 150,224 Q44,210 18,148 Z" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/><ellipse cx="150" cy="148" rx="14" ry="50" fill="#fff" opacity="0.88"/><ellipse cx="150" cy="148" rx="7" ry="40" fill="#020202"/><ellipse cx="150" cy="148" rx="2.5" ry="26" fill="#fff" opacity="0.32"/><path d="M18,148 L4,132 M18,148 L2,148 M18,148 L4,164 M282,148 L296,132 M282,148 L298,148 M282,148 L296,164" stroke="#fff" stroke-width="1.5" stroke-linecap="round" opacity="0.72"/><path d="M54,10 Q36,52 30,142 Q46,116 58,108 Q52,72 66,44 Q72,22 64,14 Z" fill="#fff" opacity="0.92"/><path d="M150,6 Q140,58 136,148 Q144,124 150,138 Q156,124 164,148 Q160,58 150,6 Z" fill="#fff" opacity="0.92"/><path d="M246,10 Q264,52 270,142 Q254,116 242,108 Q248,72 234,44 Q228,22 236,14 Z" fill="#fff" opacity="0.92"/></svg>
+      </div>
+      <span class="logo-text">NORX</span>
+    </div>
+    <div class="nav-divider"></div>
+    <div class="nav-links">
+      <a href="#heroSection" class="active"><i class="fas fa-home"></i><span>Home</span></a>
+      <a href="#projectsSection"><i class="fas fa-cubes"></i><span>Projects</span></a>
+      
+      {% if current_user.is_authenticated %}
+        <a href="{{ url_for('todo.dashboard') }}"><i class="fas fa-check-circle"></i><span>Dashboard</span></a>
+      {% else %}
+        <a href="{{ url_for('auth.login') }}"><i class="fas fa-key"></i><span>Login</span></a>
+      {% endif %}
+    </div>
+    
+    {% if current_user.is_authenticated %}
+      <div class="profile-wrap">
+        <button class="nav-avatar" id="profileBtn"><i class="fas fa-user-circle"></i></button>
+        <div class="profile-dropdown" id="profileDropdown">
+          <div class="profile-header">
+            <div class="profile-avatar-icon"><i class="fas fa-user-circle"></i></div>
+            <div class="profile-info">
+              <span class="profile-name">{{ current_user.username }}</span>
+              <span class="profile-email">{{ current_user.email }}</span>
+            </div>
+          </div>
+          <div class="profile-divider"></div>
+          <a href="{{ url_for('todo.dashboard') }}" class="profile-link"><i class="fas fa-check-circle"></i> Dashboard</a>
+          <a href="#" class="profile-link"><i class="fas fa-cog"></i> Settings</a>
+          <a href="{{ url_for('auth.logout') }}" class="profile-link logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+      </div>
+    {% else %}
+      <a href="{{ url_for('auth.register') }}" class="nav-cta"><i class="fas fa-flask"></i><span>Join</span></a>
+    {% endif %}
+    
+  </nav>
+</div>
+
+  <!-- Hero -->
+  <section class="full-section" id="heroSection">
+    <div class="hero-tile glass-refractive">
+      <div class="hero-content">
+        <div class="hero-icon"><img src="{{ url_for('static', filename='images/hero.png') }}" alt="NORX"></div>
+        <h1>NORX</h1>
+        <div class="hero-sub">No Rules. No Limits.</div>
+        <p class="hero-desc">Forge projects in the dark. Flask-powered. Frost-wrapped.<br>Your space. Your code. No boundaries.</p>
+      </div>
+    </div>
+    <a href="#projectsSection" class="scroll-indicator"><span>Enter the Forge</span><i class="fas fa-chevron-down"></i></a>
+  </section>
+
+  <!-- Projects -->
+  <section class="full-section" id="projectsSection">
+    <div class="section-label" id="projectsLabel"><span><i class="fas fa-hammer"></i> The Forge</span></div>
+    <div class="projects-grid" id="projectsGrid">
+      <a href="{{ url_for('todo.dashboard') }}" style="text-decoration: none; color: inherit;">
+  <div class="project-tile glass-refractive">
+    <div class="project-icon"><i class="fas fa-check-circle"></i></div>
+    <h3>Todo</h3><p>Task manager.</p>
+    <div class="status-badge done"><i class="fas fa-check"></i> Done</div>
+    <div class="flask-tag"><i class="fas fa-flask"></i> Flask</div>
+  </div>
+</a>
+      <div class="project-tile glass-refractive">
+        <div class="project-icon"><i class="fas fa-book"></i></div>
+        <h3>Study App</h3><p>Learn in shadows.</p>
+        <div class="status-badge progress"><i class="fas fa-cog fa-spin"></i> Working On It</div>
+        <div class="flask-tag"><i class="fas fa-flask"></i> Flask</div>
+      </div>
+      <div class="project-tile glass-refractive">
+        <div class="project-icon"><i class="fas fa-comments"></i></div>
+        <h3>Chat App</h3><p>Speak without noise.</p>
+        <div class="status-badge progress"><i class="fas fa-cog fa-spin"></i> Working On It</div>
+        <div class="flask-tag"><i class="fas fa-flask"></i> Flask</div>
+      </div>
+      <div class="project-tile glass-refractive">
+        <div class="project-icon"><i class="fas fa-brain"></i></div>
+        <h3>Agentic AI</h3><p>Intelligence unchained.</p>
+        <div class="status-badge progress"><i class="fas fa-cog fa-spin"></i> Working On It</div>
+        <div class="flask-tag"><i class="fas fa-flask"></i> Flask</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+<div class="footer-wrap">
+  <div class="footer-tile" id="footerTile">
+    <div class="footer-left"><i class="fas fa-eye"></i><span>NORX · No Rights Reserved</span></div>
+    <div class="footer-right">
+      <a href="#"><i class="fab fa-github"></i> GitHub</a>
+      <a href="#"><i class="fas fa-envelope"></i> Reach</a>
+      <a href="#"><i class="fas fa-code"></i> Docs</a>
+    </div>
+  </div>
+</div>
+
+  <script>
+  // Particles
+  const pc = document.getElementById('frostParticles');
+  if(pc) for(let i=0;i<25;i++){const p=document.createElement('div');p.classList.add('particle');const s=Math.random()*8+3;p.style.width=s+'px';p.style.height=s+'px';p.style.left=Math.random()*100+'%';p.style.top=Math.random()*100+'%';p.style.animationDuration=(Math.random()*12+10)+'s';p.style.animationDelay=Math.random()*8+'s';pc.appendChild(p);}
+
+  // Nav shrink & active
+  const nav = document.getElementById('capsuleNav');
+  const links = document.querySelectorAll('.nav-links a');
+  const secs = document.querySelectorAll('.full-section');
+
+  function updateNav(){
+    if(!nav) return;
+    const s = window.scrollY;
+    nav.classList.toggle('shrink', s > 80);
+    let cur = '';
+    secs.forEach(sec => {
+      const t = sec.offsetTop - 250;
+      if(s >= t && s < t + sec.offsetHeight) cur = sec.getAttribute('id');
+    });
+    links.forEach(l => {
+      l.classList.remove('active');
+      if(l.getAttribute('href').substring(1) === cur) l.classList.add('active');
+    });
+    if(s < 150) links.forEach(l => {
+      l.classList.remove('active');
+      if(l.getAttribute('href') === '#heroSection') l.classList.add('active');
+    });
+  }
+  window.addEventListener('scroll', updateNav, {passive: true});
+  updateNav();
+
+  // Smooth scroll only for # links
+  links.forEach(l => {
+    l.addEventListener('click', function(e) {
+      const href = this.getAttribute('href');
+      if(href && href.startsWith('#')) {
+        e.preventDefault();
+        const id = href.substring(1);
+        document.getElementById(id)?.scrollIntoView({behavior: 'smooth'});
+      }
+    });
+  });
+
+  // Reveal animations
+  const obs = new IntersectionObserver((e) => {
+    e.forEach(en => {
+      if(en.isIntersecting) {
+        if(en.target.classList.contains('project-tile')) {
+          const ts = document.querySelectorAll('.project-tile');
+          const idx = Array.from(ts).indexOf(en.target);
+          setTimeout(() => en.target.classList.add('reveal'), idx * 100);
+        } else if(en.target.id === 'projectsLabel') {
+          en.target.classList.add('revealed');
+        } else if(en.target.id === 'footerTile') {
+          en.target.classList.add('reveal');
+        }
+        obs.unobserve(en.target);
+      }
+    });
+  }, {rootMargin: '0px 0px -50px 0px', threshold: 0.15});
+
+  document.querySelectorAll('.project-tile').forEach(t => obs.observe(t));
+  const pl = document.getElementById('projectsLabel');
+  if(pl) obs.observe(pl);
+  const ft = document.getElementById('footerTile');
+  if(ft) obs.observe(ft);
+
+  // Scroll indicator
+  const si = document.querySelector('.scroll-indicator');
+  if(si) si.addEventListener('click', e => {
+    e.preventDefault();
+    document.getElementById('projectsSection')?.scrollIntoView({behavior: 'smooth'});
+  });
+
+  // Profile dropdown
+var profileBtn = document.getElementById('profileBtn');
+var profileDropdown = document.getElementById('profileDropdown');
+if(profileBtn && profileDropdown) {
+  profileBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    profileDropdown.classList.toggle('show');
+  });
+  profileDropdown.addEventListener('click', function(e) {
+    e.stopPropagation();
+  });
+  document.addEventListener('click', function() {
+    profileDropdown.classList.remove('show');
+  });
+}
+</script>
+</body>
+</html>

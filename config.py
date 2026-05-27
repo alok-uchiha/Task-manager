@@ -1,3 +1,3 @@
 class Config:
-    SQLALCHEMY_DATABASE_URI =  "mysql+pymysql://root:aKeDKEuwezcGUSRjIzilmSWAUsiwCqWO@switchyard.proxy.rlwy.net:10767/railway"
+    SQLALCHEMY_DATABASE_URI = "mysql+pymysql://root:mKAffrEcJUgthsASpslAXufJFVnGVTbg@zephyr.proxy.rlwy.net:26293/railway"
     SECRET_KEY = "SECRET_KEY"

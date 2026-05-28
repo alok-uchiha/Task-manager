@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>aroku · AI Chat</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+      height: 100vh;
+      overflow: hidden;
+      position: relative;
+      background: #0a0a14;
+      color: #fff;
+    }
+
+    /* Background */
+    .bg-wrapper { position: fixed; inset: 0; z-index: 0; overflow: hidden; }
+    .bg-image { position: absolute; inset: 0; background-size: cover; background-position: center; filter: brightness(0.85); }
+    .bg-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(5,5,15,0.4) 0%, rgba(10,10,25,0.3) 50%, rgba(5,5,15,0.4) 100%); backdrop-filter: blur(0.5px); pointer-events: none; }
+
+    /* Glass effect */
+    .glass-refractive { 
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.15), 0 0 0 1px rgba(255,255,255,0.06), 0 8px 30px rgba(0,0,0,0.3); 
+      position: relative; 
+      overflow: visible; 
+    }
+    .glass-refractive::before { 
+      content: ''; 
+      position: absolute; 
+      inset: -1px; 
+      border-radius: inherit; 
+      padding: 1px; 
+      background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 50%, rgba(255,255,255,0.08) 100%); 
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); 
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); 
+      -webkit-mask-composite: xor; 
+      mask-composite: exclude; 
+      pointer-events: none; 
+    }
+
+    /* Top Nav - Responsive */
+    .top-nav { 
+      position: fixed; 
+      top: 1rem; 
+      left: 50%; 
+      transform: translateX(-50%); 
+      z-index: 70; 
+      display: flex; 
+      align-items: center; 
+      gap: 1rem; 
+      background: rgba(255,255,255,0.05); 
+      backdrop-filter: blur(30px); 
+      border-radius: 50px; 
+      padding: 0.5rem 1.5rem; 
+      border: 0.5px solid rgba(255,255,255,0.1); 
+    }
+    .nav-brand { display: flex; align-items: center; gap: 0.4rem; color: #fff; text-decoration: none; font-weight: 600; letter-spacing: 4px; font-size: 0.9rem; }
+    .nav-brand i { font-size: 0.9rem; }
+    .nav-actions { display: flex; gap: 0.3rem; }
+    .nav-link { color: rgba(255,255,255,0.5); text-decoration: none; font-size: 0.78rem; padding: 0.4rem 1rem; border-radius: 50px; transition: all 0.3s; }
+    .nav-link:hover, .nav-link.active { color: #fff; background: rgba(255,255,255,0.1); }
+
+    /* Profile Dropdown */
+    .profile-wrap { position: relative; }
+    .nav-avatar { background: none; border: none; color: rgba(255,255,255,0.5); font-size: 1.3rem; cursor: pointer; padding: 0.2rem; transition: all 0.2s; }
+    .nav-avatar:hover { color: #fff; transform: scale(1.05); }
+    .profile-dropdown { 
+      position: absolute; 
+      top: 100%; 
+      right: 0; 
+      margin-top: 15px; 
+      width: 240px; 
+      background: rgba(15, 15, 25, 0.95); 
+      backdrop-filter: blur(50px); 
+      border-radius: 20px; 
+      padding: 1.2rem; 
+      display: none; 
+      z-index: 9999; 
+      border: 0.5px solid rgba(255,255,255,0.12); 
+      box-shadow: 0 25px 60px rgba(0,0,0,0.5); 
+    }
+    .profile-dropdown.show { display: block; animation: dropdownFade 0.2s ease; }
+    @keyframes dropdownFade { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    .profile-header { display: flex; align-items: center; gap: 0.8rem; }
+    .profile-avatar-icon { width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; }
+    .profile-avatar-icon i { font-size: 1.5rem; color: rgba(255,255,255,0.4); }
+    .profile-info { overflow: hidden; }
+    .profile-name { display: block; font-size: 0.9rem; color: #fff; font-weight: 500; }
+    .profile-email { display: block; font-size: 0.7rem; color: rgba(255,255,255,0.35); word-break: break-all; }
+    .profile-divider { height: 1px; background: rgba(255,255,255,0.06); margin: 0.8rem 0; }
+    .profile-link { display: flex; align-items: center; gap: 0.7rem; padding: 0.6rem 0.8rem; border-radius: 12px; color: rgba(255,255,255,0.5); text-decoration: none; font-size: 0.82rem; transition: all 0.2s; }
+    .profile-link:hover { background: rgba(255,255,255,0.05); color: #fff; }
+    .profile-link.logout { color: #f87171; }
+    .profile-link.logout:hover { background: rgba(248,113,113,0.1); }
+
+    /* Sidebar - Responsive */
+    .sidebar { 
+      position: fixed; 
+      left: 0; 
+      top: 0; 
+      bottom: 0; 
+      z-index: 60; 
+      width: 56px; 
+      background: rgba(0,0,0,0.35); 
+      backdrop-filter: blur(30px); 
+      padding: 6rem 0.6rem 1.5rem; 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      gap: 3rem; 
+      border-right: 0.5px solid rgba(255,255,255,0.06); 
+      border-radius: 0 16px 16px 0; 
+      transition: width 0.3s; 
+      overflow: hidden; 
+    }
+    .sidebar:hover { width: 160px; align-items: flex-start; }
+    .sb-brand, .sb-link { display: flex; align-items: center; gap: 1rem; padding: 0.8rem 0.6rem; border-radius: 14px; color: rgba(255,255,255,0.5); text-decoration: none; font-size: 0.85rem; white-space: nowrap; width: 100%; transition: all 0.3s; }
+    .sb-brand i, .sb-link i { font-size: 1rem; min-width: 24px; text-align: center; }
+    .sb-label { opacity: 0; transition: opacity 0.2s 0.1s; }
+    .sidebar:hover .sb-label { opacity: 1; }
+    .sb-brand:hover, .sb-link:hover { color: #fff; background: rgba(255,255,255,0.04); transform: translateX(4px); }
+    .sb-link.active { color: #fff; background: rgba(255,255,255,0.08); }
+
+    /* Main Content - Responsive */
+    .main-content { 
+      margin-left: 56px; 
+      height: 100vh; 
+      display: flex; 
+      flex-direction: column; 
+      overflow: hidden; 
+    }
+    
+    /* Chat Container */
+    .chat-container { 
+      flex: 1; 
+      overflow-y: auto; 
+      scroll-behavior: smooth; 
+      padding: 5rem 0 1rem 0; 
+    }
+    .chat-container::-webkit-scrollbar { width: 6px; }
+    .chat-container::-webkit-scrollbar-track { background: transparent; }
+    .chat-container::-webkit-scrollbar-thumb { background: #2d2d44; border-radius: 10px; }
+    
+    .messages-wrapper { 
+      max-width: 800px; 
+      margin: 0 auto; 
+      padding: 0 2rem 1rem 2rem; 
+    }
+    
+    /* Message Styles */
+    .message { 
+      display: flex; 
+      gap: 1rem; 
+      margin-bottom: 1.5rem; 
+      animation: messageAppear 0.3s ease; 
+    }
+    @keyframes messageAppear {
+      0% { opacity: 0; transform: translateY(10px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    
+    .message-avatar { 
+      width: 32px; 
+      height: 32px; 
+      border-radius: 50%; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      flex-shrink: 0; 
+      font-size: 0.9rem; 
+    }
+    .ai-avatar { background: linear-gradient(135deg, #10b981, #06b6d4); color: white; }
+    .user-avatar { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; }
+    
+    .message-content { flex: 1; min-width: 0; }
+    .message-header { display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.3rem; flex-wrap: wrap; }
+    .message-sender { font-weight: 600; font-size: 0.9rem; }
+    .message-time { font-size: 0.7rem; color: rgba(255,255,255,0.3); }
+    
+    .message-text { 
+      line-height: 1.6; 
+      font-size: 0.95rem; 
+      color: #e5e7eb; 
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+    .message-text p { margin-bottom: 0.8rem; }
+    .message-text p:last-child { margin-bottom: 0; }
+    .message-text code { 
+      background: rgba(0,0,0,0.4); 
+      padding: 0.2rem 0.4rem; 
+      border-radius: 6px; 
+      font-size: 0.85rem; 
+      font-family: 'SF Mono', Monaco, monospace; 
+      word-break: break-word;
+    }
+    .message-text pre { 
+      background: #0a0a12; 
+      padding: 1rem; 
+      border-radius: 12px; 
+      overflow-x: auto; 
+      margin: 0.8rem 0; 
+      border: 1px solid rgba(255,255,255,0.05); 
+    }
+    .message-text pre code { background: transparent; padding: 0; }
+    
+    /* Typing Indicator */
+    .typing-indicator { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0; }
+    .typing-dots { display: flex; gap: 4px; align-items: center; }
+    .typing-dot { width: 6px; height: 6px; background: #818cf8; border-radius: 50%; animation: typingBounce 1.4s infinite; }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingBounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-6px); opacity: 1; } }
+    .typing-text { font-size: 0.8rem; color: rgba(255,255,255,0.4); }
+    
+    /* Input Area - Pure Glassmorphism */
+    .input-area { 
+      padding: 0 2rem 2rem 2rem; 
+      background: transparent; 
+      position: relative;
+      z-index: 10;
+    }
+    .input-container { 
+      max-width: 800px; 
+      margin: 0 auto; 
+    }
+    .input-wrapper { 
+      display: flex; 
+      align-items: center; 
+      gap: 0.5rem; 
+      background: rgba(255, 255, 255, 0.05); 
+      backdrop-filter: blur(20px); 
+      border: 1px solid rgba(255, 255, 255, 0.12); 
+      border-radius: 28px; 
+      padding: 0.5rem 0.5rem 0.5rem 1.2rem; 
+      transition: all 0.2s; 
+    }
+    .input-wrapper:focus-within { 
+      border-color: rgba(129, 140, 248, 0.5); 
+      box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.1);
+      background: rgba(255, 255, 255, 0.08); 
+    }
+    .input-wrapper input { 
+      flex: 1; 
+      background: transparent; 
+      border: none; 
+      outline: none; 
+      color: #fff; 
+      font-size: 0.95rem; 
+      font-family: inherit; 
+      padding: 0.8rem 0; 
+    }
+    .input-wrapper input::placeholder { 
+      color: rgba(255, 255, 255, 0.3); 
+    }
+    .send-btn { 
+      width: 36px; 
+      height: 36px; 
+      border-radius: 50%; 
+      background: linear-gradient(135deg, #6366f1, #8b5cf6); 
+      border: none; 
+      color: white; 
+      cursor: pointer; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      transition: all 0.2s; 
+    }
+    .send-btn:hover:not(:disabled) { 
+      transform: scale(1.05); 
+      box-shadow: 0 2px 12px rgba(99, 102, 241, 0.4); 
+    }
+    .send-btn:disabled { 
+      opacity: 0.4; 
+      cursor: not-allowed; 
+    }
+    
+    /* Suggestions - Responsive */
+    .suggestions { 
+      display: flex; 
+      gap: 0.6rem; 
+      flex-wrap: wrap; 
+      margin-top: 1rem; 
+      justify-content: center; 
+    }
+    .suggestion-pill { 
+      background: rgba(255, 255, 255, 0.04); 
+      backdrop-filter: blur(10px);
+      border: 0.5px solid rgba(255,255,255,0.08); 
+      padding: 0.5rem 1rem; 
+      border-radius: 40px; 
+      font-size: 0.75rem; 
+      color: rgba(255,255,255,0.6); 
+      cursor: pointer; 
+      transition: all 0.2s; 
+    }
+    .suggestion-pill:hover { 
+      background: rgba(129, 140, 248, 0.2); 
+      border-color: rgba(129, 140, 248, 0.4); 
+      color: #fff; 
+      transform: translateY(-1px); 
+    }
+    
+    /* Welcome Screen */
+    .welcome-screen { 
+      text-align: center; 
+      padding: 2rem 1rem; 
+      animation: fadeInUp 0.5s ease;
+    }
+    @keyframes fadeInUp { 
+      from { opacity: 0; transform: translateY(20px); } 
+      to { opacity: 1; transform: translateY(0); } 
+    }
+    .welcome-icon { 
+      font-size: 3rem; 
+      margin-bottom: 1rem; 
+    }
+    .welcome-screen h1 { 
+      font-size: 1.8rem; 
+      font-weight: 600; 
+      margin-bottom: 0.5rem; 
+      background: linear-gradient(135deg, #fff, #a5b4fc); 
+      -webkit-background-clip: text; 
+      background-clip: text; 
+      color: transparent; 
+    }
+    .welcome-screen p { 
+      color: rgba(255,255,255,0.5); 
+      margin-bottom: 1.5rem; 
+      font-size: 0.9rem;
+    }
+    .welcome-grid { 
+      display: flex; 
+      gap: 0.8rem; 
+      justify-content: center; 
+      flex-wrap: wrap; 
+    }
+    .welcome-card { 
+      background: rgba(255,255,255,0.03); 
+      border: 1px solid rgba(255,255,255,0.05); 
+      border-radius: 16px; 
+      padding: 0.8rem 1.2rem; 
+      cursor: pointer; 
+      transition: all 0.2s; 
+      min-width: 120px;
+    }
+    .welcome-card:hover { 
+      background: rgba(255,255,255,0.08); 
+      transform: translateY(-2px); 
+      border-color: rgba(129, 140, 248, 0.3); 
+    }
+    .welcome-card i { 
+      font-size: 1.3rem; 
+      margin-bottom: 0.3rem; 
+      color: #818cf8; 
+      display: block;
+    }
+    .welcome-card span { 
+      display: block; 
+      font-size: 0.8rem; 
+      color: rgba(255,255,255,0.7); 
+    }
+
+    /* ========== RESPONSIVE DESIGN ========== */
+    @media (max-width: 768px) {
+      .sidebar { width: 44px; }
+      .main-content { margin-left: 44px; }
+      .messages-wrapper { padding: 0 1rem 1rem 1rem; }
+      .input-area { padding: 0 1rem 1.5rem 1rem; }
+      .top-nav { 
+        gap: 0.5rem; 
+        padding: 0.4rem 1rem; 
+      }
+      .nav-actions { 
+        display: none; 
+      }
+      .nav-brand span { 
+        display: none; 
+      }
+      .welcome-screen h1 { 
+        font-size: 1.3rem; 
+      }
+      .welcome-card { 
+        padding: 0.6rem 1rem; 
+        min-width: 100px;
+      }
+      .welcome-card i { 
+        font-size: 1rem; 
+      }
+      .welcome-card span { 
+        font-size: 0.7rem; 
+      }
+      .message { 
+        gap: 0.6rem; 
+      }
+      .message-avatar { 
+        width: 28px; 
+        height: 28px; 
+        font-size: 0.7rem; 
+      }
+      .message-text { 
+        font-size: 0.85rem; 
+      }
+    }
+
+    @media (max-width: 480px) {
+      .main-content { margin-left: 0; }
+      .sidebar { 
+        transform: translateX(-100%);
+        transition: transform 0.3s;
+        width: 60px;
+      }
+      .sidebar:hover { width: 60px; }
+      .top-nav { 
+        width: calc(100% - 2rem);
+        left: 50%;
+      }
+      .messages-wrapper { 
+        padding: 0 0.8rem 1rem 0.8rem; 
+      }
+      .welcome-grid { 
+        gap: 0.5rem; 
+      }
+      .welcome-card { 
+        padding: 0.5rem 0.8rem; 
+        min-width: 80px;
+      }
+      .suggestions { 
+        gap: 0.4rem; 
+      }
+      .suggestion-pill { 
+        padding: 0.4rem 0.8rem; 
+        font-size: 0.7rem; 
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-wrapper">
+    <div class="bg-image" style="background-image: url('{{ url_for('static', filename='images/bg_todo.jpg') }}');"></div>
+    <div class="bg-overlay"></div>
+  </div>
+
+  <!-- Top Nav -->
+  <nav class="top-nav glass-refractive">
+    <a href="{{ url_for('main.home') }}" class="nav-brand">
+      <i class="fas fa-eye"></i><span>aroku</span>
+    </a>
+    <div class="nav-actions">
+      <a href="{{ url_for('todo.dashboard') }}" class="nav-link">Tasks</a>
+      <a href="#" class="nav-link">Projects</a>
+      <a href="#" class="nav-link active">AI Chat</a>
+    </div>
+    <div class="profile-wrap">
+      <button class="nav-avatar" id="profileBtn"><i class="fas fa-user-circle"></i></button>
+      <div class="profile-dropdown" id="profileDropdown">
+        <div class="profile-header">
+          <div class="profile-avatar-icon"><i class="fas fa-user-circle"></i></div>
+          <div class="profile-info">
+            <span class="profile-name">{{ current_user.username }}</span>
+            <span class="profile-email">{{ current_user.email }}</span>
+          </div>
+        </div>
+        <div class="profile-divider"></div>
+        <a href="#" class="profile-link"><i class="fas fa-cog"></i> Settings</a>
+        <a href="{{ url_for('auth.logout') }}" class="profile-link logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <a href="{{ url_for('main.home') }}" class="sb-brand">
+      <i class="fas fa-eye"></i><span class="sb-label">aroku</span>
+    </a>
+    <nav class="sb-nav">
+      <a href="{{ url_for('todo.dashboard') }}" class="sb-link">
+        <i class="fas fa-check-circle"></i><span class="sb-label">Tasks</span>
+      </a>
+      <a href="#" class="sb-link">
+        <i class="fas fa-folder"></i><span class="sb-label">Projects</span>
+      </a>
+      <a href="#" class="sb-link active">
+        <i class="fas fa-comment-dots"></i><span class="sb-label">AI Chat</span>
+      </a>
+    </nav>
+  </aside>
+
+  <!-- Main Chat -->
+  <main class="main-content">
+    <div class="chat-container" id="chatContainer">
+      <div class="messages-wrapper" id="messagesWrapper"></div>
+    </div>
+
+    <div class="input-area">
+      <div class="input-container">
+        <div class="input-wrapper">
+          <input type="text" id="messageInput" placeholder="Ask anything..." autocomplete="off">
+          <button class="send-btn" id="sendBtn"><i class="fas fa-arrow-up"></i></button>
+        </div>
+        <div class="suggestions">
+          <div class="suggestion-pill" data-prompt="Explain quantum computing simply">✨ Quantum</div>
+          <div class="suggestion-pill" data-prompt="Write a Python function to reverse a linked list">🐍 Python code</div>
+          <div class="suggestion-pill" data-prompt="Give me a creative story idea">📖 Story idea</div>
+          <div class="suggestion-pill" data-prompt="Explain blockchain simply">⛓️ Blockchain</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    marked.setOptions({ 
+      breaks: true, 
+      gfm: true, 
+      highlight: (code, lang) => {
+        if (lang && hljs.getLanguage(lang)) {
+          return hljs.highlight(code, { language: lang }).value;
+        }
+        return hljs.highlightAuto(code).value;
+      }
+    });
+
+    // Get DOM elements
+    const messagesWrapper = document.getElementById('messagesWrapper');
+    const chatContainer = document.getElementById('chatContainer');
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+    
+    let isWaiting = false;
+    let isWelcomeVisible = true;
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+    }
+
+    function renderMarkdown(content) {
+      try { 
+        return marked.parse(content); 
+      } catch(e) { 
+        return escapeHtml(content); 
+      }
+    }
+
+    function formatTime() {
+      return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function addMessage(role, content, isError = false) {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = 'message';
+      const time = formatTime();
+      
+      messageDiv.innerHTML = `
+        <div class="message-avatar ${role === 'user' ? 'user-avatar' : 'ai-avatar'}">
+          <i class="fas ${role === 'user' ? 'fa-user-astronaut' : 'fa-brain'}"></i>
+        </div>
+        <div class="message-content">
+          <div class="message-header">
+            <span class="message-sender">${role === 'user' ? 'You' : 'Echo'}</span>
+            <span class="message-time">${time}</span>
+          </div>
+          <div class="message-text">${role === 'assistant' ? renderMarkdown(content) : escapeHtml(content)}</div>
+        </div>
+      `;
+      
+      if (isError) {
+        const textDiv = messageDiv.querySelector('.message-text');
+        if (textDiv) textDiv.style.color = '#f87171';
+      }
+      
+      messagesWrapper.appendChild(messageDiv);
+      
+      // Scroll to bottom
+      setTimeout(() => {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+      }, 100);
+      
+      return messageDiv;
+    }
+
+    function showTypingIndicator() {
+      removeTypingIndicator();
+      const typingDiv = document.createElement('div');
+      typingDiv.className = 'message';
+      typingDiv.id = 'typingIndicator';
+      typingDiv.innerHTML = `
+        <div class="message-avatar ai-avatar"><i class="fas fa-brain"></i></div>
+        <div class="message-content">
+          <div class="typing-indicator">
+            <div class="typing-dots">
+              <span class="typing-dot"></span>
+              <span class="typing-dot"></span>
+              <span class="typing-dot"></span>
+            </div>
+            <span class="typing-text">Echo is thinking</span>
+          </div>
+        </div>
+      `;
+      messagesWrapper.appendChild(typingDiv);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    function removeTypingIndicator() {
+      const indicator = document.getElementById('typingIndicator');
+      if (indicator) indicator.remove();
+    }
+
+    function showWelcomeScreen() {
+      const existingWelcome = document.getElementById('welcomeScreen');
+      if (existingWelcome) existingWelcome.remove();
+      
+      const welcomeDiv = document.createElement('div');
+      welcomeDiv.className = 'welcome-screen';
+      welcomeDiv.id = 'welcomeScreen';
+      welcomeDiv.innerHTML = `
+        <div class="welcome-icon"><i class="fas fa-magic"></i></div>
+        <h1>How can I help?</h1>
+        <p>Ask me anything — coding, writing, learning, or just chat</p>
+        <div class="welcome-grid">
+          <div class="welcome-card" data-prompt="Write a haiku about AI">
+            <i class="fas fa-feather-alt"></i>
+            <span>Write a poem</span>
+          </div>
+          <div class="welcome-card" data-prompt="Explain ML like I'm 10">
+            <i class="fas fa-graduation-cap"></i>
+            <span>Explain simply</span>
+          </div>
+          <div class="welcome-card" data-prompt="Give me 5 productivity tips">
+            <i class="fas fa-lightbulb"></i>
+            <span>Tips</span>
+          </div>
+          <div class="welcome-card" data-prompt="Write a professional email">
+            <i class="fas fa-envelope"></i>
+            <span>Email draft</span>
+          </div>
+        </div>
+      `;
+      messagesWrapper.appendChild(welcomeDiv);
+      isWelcomeVisible = true;
+      
+      // Add click handlers
+      document.querySelectorAll('.welcome-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const prompt = card.getAttribute('data-prompt');
+          if (prompt && !isWaiting) {
+            messageInput.value = prompt;
+            sendMessage();
+          }
+        });
+      });
+    }
+
+    async function sendMessage() {
+      const userText = messageInput.value.trim();
+      if (!userText || isWaiting) return;
+      
+      isWaiting = true;
+      messageInput.disabled = true;
+      sendBtn.disabled = true;
+      
+      // Remove welcome screen on first message
+      const welcomeScreen = document.getElementById('welcomeScreen');
+      if (welcomeScreen) {
+        welcomeScreen.remove();
+        isWelcomeVisible = false;
+      }
+      
+      // Add user message
+      addMessage('user', userText);
+      messageInput.value = '';
+      
+      // Show typing indicator
+      showTypingIndicator();
+      
+      try {
+        const response = await fetch('/ai/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: userText })
+        });
+        
+        if (!response.ok) throw new Error(`Server error: ${response.status}`);
+        
+        const data = await response.json();
+        removeTypingIndicator();
+        
+        if (data.reply) {
+          addMessage('assistant', data.reply);
+        } else {
+          throw new Error('No reply from server');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        removeTypingIndicator();
+        addMessage('assistant', `⚠️ Error: ${error.message}`, true);
+      } finally {
+        isWaiting = false;
+        messageInput.disabled = false;
+        sendBtn.disabled = false;
+        messageInput.focus();
+      }
+    }
+
+    // Event Listeners
+    sendBtn.addEventListener('click', sendMessage);
+    messageInput.addEventListener('keypress', (e) => { 
+      if (e.key === 'Enter') sendMessage(); 
+    });
+    
+    // Suggestion pills
+    document.querySelectorAll('.suggestion-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        const prompt = pill.getAttribute('data-prompt');
+        if (prompt && !isWaiting) {
+          messageInput.value = prompt;
+          sendMessage();
+        }
+      });
+    });
+    
+    // Profile dropdown
+    const profileBtn = document.getElementById('profileBtn');
+    const profileDropdown = document.getElementById('profileDropdown');
+    if (profileBtn && profileDropdown) {
+      profileBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        profileDropdown.classList.toggle('show');
+      });
+      document.addEventListener('click', () => {
+        if (profileDropdown) profileDropdown.classList.remove('show');
+      });
+    }
+    
+    // Initialize
+    showWelcomeScreen();
+    messageInput.focus();
+    
+    // Responsive sidebar for mobile
+    if (window.innerWidth <= 480) {
+      let sidebarOpen = false;
+      const sidebar = document.querySelector('.sidebar');
+      const mainContent = document.querySelector('.main-content');
+      
+      // Optional: Add hamburger menu for mobile
+      const topNav = document.querySelector('.top-nav');
+      if (topNav && !document.querySelector('.menu-toggle')) {
+        const menuBtn = document.createElement('button');
+        menuBtn.innerHTML = '<i class="fas fa-bars"></i>';
+        menuBtn.style.cssText = 'background:none;border:none;color:#fff;font-size:1.2rem;cursor:pointer;margin-right:0.5rem;';
+        menuBtn.classList.add('menu-toggle');
+        topNav.insertBefore(menuBtn, topNav.firstChild);
+        
+        menuBtn.addEventListener('click', () => {
+          if (sidebar.style.transform === 'translateX(0px)') {
+            sidebar.style.transform = 'translateX(-100%)';
+            mainContent.style.marginLeft = '0';
+          } else {
+            sidebar.style.transform = 'translateX(0)';
+            mainContent.style.marginLeft = '60px';
+          }
+        });
+      }
+    }
+  </script>
+</body>
+</html>

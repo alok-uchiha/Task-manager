@@ -1,3 +1,5 @@
+import os
+
 class Config:
-    SQLALCHEMY_DATABASE_URI = "mysql+pymysql://root:mKAffrEcJUgthsASpslAXufJFVnGVTbg@zephyr.proxy.rlwy.net:26293/railway"
-    SECRET_KEY = "SECRET_KEY"
+    SQLALCHEMY_DATABASE_URI = os.getenv("SQLALCHEMY_DATABASE_URI")
+    SECRET_KEY = os.getenv("SECRET_KEY")

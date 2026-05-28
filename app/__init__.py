@@ -14,9 +14,11 @@ def create_app():
     from app.auth.routes import auth
     from app.main.routes import main
     from app.todo.routes import todo
+    from app.ai.routes import ai
     
     app.register_blueprint(auth, url_prefix="/auth")
     app.register_blueprint(main, url_prefix="/")
     app.register_blueprint(todo, url_prefix="/todo")
+    app.register_blueprint(ai, url_prefix="/ai")
 
     return app

@@ -93,12 +93,19 @@
         <div class="status-badge progress"><i class="fas fa-cog fa-spin"></i> Working On It</div>
         <div class="flask-tag"><i class="fas fa-flask"></i> Flask</div>
       </div>
-      <div class="project-tile glass-refractive">
-        <div class="project-icon"><i class="fas fa-comments"></i></div>
-        <h3>Chat App</h3><p>Speak without noise.</p>
-        <div class="status-badge progress"><i class="fas fa-cog fa-spin"></i> Working On It</div>
-        <div class="flask-tag"><i class="fas fa-flask"></i> Flask</div>
-      </div>
+      <a href="{{ url_for('ai.ai_chat') }}" style="text-decoration: none; color: inherit;">
+  <div class="project-tile glass-refractive">
+    <div class="project-icon"><i class="fas fa-comments"></i></div>
+    <h3>Chatbot</h3>
+    <p>Speak without noise.</p>
+    <div class="status-badge done">
+      <i class="fas fa-check"></i> live
+    </div>
+    <div class="flask-tag">
+      <i class="fas fa-flask"></i> Flask
+    </div>
+  </div>
+</a>
       <div class="project-tile glass-refractive">
         <div class="project-icon"><i class="fas fa-brain"></i></div>
         <h3>Agentic AI</h3><p>Intelligence unchained.</p>

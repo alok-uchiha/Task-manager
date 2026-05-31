@@ -651,13 +651,63 @@ margin-top: 15px;
       .messages-area, .input-wrapper { padding-left: 16px; padding-right: 16px; }
       .welcome-hero h2 { font-size: 24px; }
     }
+    @media (max-width:1024px){
+
+    .sidebar{
+        width:60px;
+    }
+
+    .main-wrapper{
+    margin-left:60px;
+}
+
+    .capsule-nav{
+        padding:0.5rem 1rem;
+    }
+
+}
+@media (max-width:768px){
+
+    .sidebar{
+        position:fixed;
+        left:-260px;
+
+        width:260px;
+        height:100vh;
+
+        transition:left .3s ease;
+    }
+
+    .sidebar.open{
+        left:0;
+    }
+
+    .main-wrapper{
+    margin-left:0;
+}
+
+    .nav-links{
+        display:none;
+    }
+    .top-nav{
+    justify-content: space-between;
+    padding: 0 12px;
+}
+
+.menu-btn{
+    display: block;
+}
+
+}
   </style>
 </head>
 <body>
   <div class="wallpaper-sheen"></div>
 
   <!-- TOP CAPSULE NAV -->
+   
   <nav class="top-nav glass-refractive">
+    
     <a href="{{ url_for('main.home') }}" class="nav-brand">
       <i class="fas fa-eye"></i><span>aroku</span>
     </a>
@@ -689,6 +739,8 @@ margin-top: 15px;
 
 
  <aside class="sidebar">
+
+  
 
     <div class="sidebar-menu">
         <a href="{{ url_for('main.home') }}" class="side-item">
@@ -736,6 +788,14 @@ margin-top: 15px;
   </main>
 
   <script>
+const btn = document.querySelector('.menu-btn');
+const sidebar = document.querySelector('.sidebar');
+
+if(btn && sidebar){
+    btn.addEventListener('click', () => {
+        sidebar.classList.toggle('open');
+    });
+}
     (function() {
       // --- DOM elements (unchanged logic, only visuals enhanced)
       const chatInput = document.getElementById('chatInput');

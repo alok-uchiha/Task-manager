@@ -3,1071 +3,908 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>aroku · AI Chat</title>
-  <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <title>aroko AI</title>
+
+  <!-- Fonts & Icons -->
+   <link rel="icon" href="{{ url_for('static', filename='images/logo.png') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;590;620;700&display=swap" rel="stylesheet">
+
+  <!-- Markdown & Highlight.js -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+
   <style>
-    /* Global Base Reset & Font (matching Tasks Theme) */
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { 
-      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif; 
-      height: 100vh; 
-      overflow: hidden; 
-      background: #0a0a14; 
-      color: #fff; 
-    }
+    /* ============================================================
+       macOS Sequoia · Liquid Glass Design System
+       — Calm, native, premium. No glassmorphism cliché. —
+       ============================================================ */
 
-    /* Ambient Background System */
-    .bg-wrapper { position: fixed; inset: 0; z-index: 0; }
-    .bg-image { 
-      position: absolute; 
-      inset: 0; 
-      background-size: cover; 
-      background-position: center; 
-      filter: brightness(0.65) saturate(1.1); 
-    }
-    .bg-overlay { 
-      position: absolute; 
-      inset: 0; 
-      background: linear-gradient(180deg, rgba(5,5,15,0.65) 0%, rgba(10,10,25,0.85) 100%); 
-    }
-
-    /* Glassmorphism Refractive Specs */
-    .glass-refractive { 
-  box-shadow:
-    0 8px 24px rgba(0,0,0,0.22),
-    inset 0 1px 0 rgba(255,255,255,0.04);
-
-  position: relative;
-
-  background: rgba(18,18,22,0.52);
-
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-
-  border-radius: 16px;
-
-  border: 1px solid rgba(255,255,255,0.05);
-}
-
-    /* TOP CAPSULE NAV (Replicated exactly from Tasks) */
-    .top-nav { 
-      position: fixed; 
-      top: 0.7rem;
-      left: 50%; 
-      transform: translateX(-50%); 
-      z-index: 70; 
-      display: flex; 
-      align-items: center; 
-      gap: 1rem; 
-      background: rgba(255,255,255,0.05); 
-      backdrop-filter: blur(14px); 
-      -webkit-backdrop-filter: blur(14px);
-      border-radius: 18px;
-      padding: 0.42rem 1rem; 
-      border: 0.5px solid rgba(255,255,255,0.1); 
-    }
-    .nav-brand { 
-      display: flex; 
-      align-items: center; 
-      gap: 0.4rem; 
-      color: #fff; 
-      text-decoration: none; 
-      font-weight: 600; 
-      letter-spacing: 4px; 
-      font-size: 0.9rem; 
-    }
-    .nav-brand i { color: #818cf8; }
-    .nav-actions { display: flex; gap: 0.3rem; }
-    .nav-link { 
-      color: rgba(255,255,255,0.5); 
-      text-decoration: none; 
-      font-size: 0.78rem; 
-      padding: 0.4rem 1rem; 
-      border-radius: 50px; 
-      transition: all 0.3s ease; 
-    }
-    .nav-link:hover, .nav-link.active { 
-      color: #fff; 
-      background: rgba(255,255,255,0.12); 
-    }
-    
-    /* User Profile Menu */
-    .profile-wrap { position: relative; }
-    .nav-avatar { background: none; border: none; color: rgba(255,255,255,0.5); font-size: 1.3rem; cursor: pointer; transition: color 0.2s; }
-    .nav-avatar:hover { color: #fff; }
-    .profile-dropdown { 
-      position: absolute; 
-      top: 100%; 
-      right: 0; 
-      margin-top: 15px; 
-      width: 240px; 
-      background: rgba(15,15,25,0.95); 
-      backdrop-filter: blur(14px); 
-      -webkit-backdrop-filter: blur(14px);
-      border-radius: 20px; 
-      padding: 1.2rem; 
-      display: none; 
-      z-index: 9999; 
-      border: 0.5px solid rgba(255,255,255,0.12); 
-    }
-    .profile-dropdown.show { display: block; animation: dropdownFade 0.2s ease-out; }
-    @keyframes dropdownFade { from { opacity: 0; transform: translateY(-2px); } to { opacity: 1; transform: translateY(0); } }
-    .profile-header { display: flex; align-items: center; gap: 0.8rem; }
-    .profile-avatar-icon { width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
-    .profile-info .profile-name { font-size: 0.9rem; font-weight: 500; display: block; }
-    .profile-info .profile-email { font-size: 0.7rem; color: rgba(255,255,255,0.35); display: block; }
-    .profile-divider { height: 1px; background: rgba(255,255,255,0.06); margin: 0.8rem 0; }
-    .profile-link { display: flex; align-items: center; gap: 0.7rem; padding: 0.6rem 0.8rem; border-radius: 12px; color: rgba(255,255,255,0.5); text-decoration: none; font-size: 0.82rem; transition: all 0.2s; }
-    .profile-link:hover { background: rgba(255,255,255,0.05); color: #fff; }
-    .profile-link.logout { color: #f87171; }
-    .profile-link.logout:hover { background: rgba(248,113,113,0.1); }
-
-    /* HOVER SIDEBAR (Replicated exactly from Tasks) */
-    .sidebar { 
-      position: fixed; 
-      left: 0; 
-      top: 0; 
-      bottom: 0; 
-      z-index: 60; 
-      width: 56px; 
-      background: rgba(0,0,0,0.35); 
-      backdrop-filter: blur(14px); 
-      -webkit-backdrop-filter: blur(14px);
-      padding: 6rem 0.6rem 1.5rem; 
-      display: flex; 
-      flex-direction: column; 
-      align-items: center; 
-      gap: 1.6rem; 
-      border-right: 0.5px solid rgba(255,255,255,0.06); 
-      transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
-      overflow: hidden; 
-    }
-    .sidebar:hover { width: 160px; align-items: flex-start; }
-    .sb-brand, .sb-link { 
-      display: flex; 
-      align-items: center; 
-      gap: 1rem; 
-      padding: 0.8rem 0.6rem; 
-      border-radius: 14px; 
-      color: rgba(255,255,255,0.5); 
-      text-decoration: none; 
-      font-size: 0.85rem; 
-      white-space: nowrap; 
-      width: 100%; 
-      transition: all 0.2s;
-    }
-    .sb-brand i, .sb-link i {
-  font-size: 0.92rem;
-  min-width: 18px;
-}
-    .sb-label { opacity: 0; transition: opacity 0.2s ease; }
-    .sidebar:hover .sb-label { opacity: 1; }
-    .sb-link:hover, .sb-link.active { color: #fff; background: rgba(255,255,255,0.08); }
-
-    /* CORE WORKSPACE - TILED MODULES */
-    .main-content { 
-      margin-left: 56px; 
-      height: 100vh; 
-      display: flex; 
-      flex-direction: column; 
-      position: relative;
-      z-index: 10;
-    }
-
-    .tiled-container {
-      display: grid;
-      grid-template-columns: 1fr 310px;
-      gap: 1.25rem;
-      flex: 1;
-      padding: 6rem 1.5rem 1.5rem 1.5rem;
-      height: 100%;
-      overflow: hidden;
-    }
-
-    /* Left Tile: Main Chat Interface */
-    .chat-tile {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      overflow: hidden;
-    }
-
-    .chat-tile-header {
-      padding: 1.2rem 1.5rem;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .chat-status-indicator {
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
-    }
-
-    .status-pulse {
-      width: 8px;
-      height: 8px;
-      background: #10b981;
-      border-radius: 50%;
-      box-shadow: 0 0 10px rgba(16, 185, 129, 0.7);
-      animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-      70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
-      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-    }
-
-    .chat-status-text {
-      font-size: 0.85rem;
-      font-weight: 500;
-      color: rgba(255, 255, 255, 0.8);
-    }
-
-    .clear-chat-btn {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      color: rgba(255, 255, 255, 0.6);
-      padding: 0.4rem 0.8rem;
-      border-radius: 12px;
-      font-size: 0.75rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      transition: all 0.2s;
-    }
-
-    .clear-chat-btn:hover {
-      background: rgba(239, 68, 68, 0.15);
-      border-color: rgba(239, 68, 68, 0.3);
-      color: #f87171;
-    }
-
-    /* Message Scroller */
-    .chat-scroll-viewport { 
-      flex: 1; 
-      overflow-y: auto; 
-      padding: 1.5rem;
-      display: flex;
-      flex-direction: column;
-    }
-    .chat-scroll-viewport::-webkit-scrollbar { width: 6px; }
-    .chat-scroll-viewport::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.12); border-radius: 10px; }
-    .chat-scroll-viewport::-webkit-scrollbar-track { background: transparent; }
-
-    .messages-wrapper { 
-      max-width: 850px; 
-      width: 100%;
-      margin: 0 auto; 
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-    }
-
-    /* Message Layout */
-    .message { 
-      display: flex; 
-      gap: 1rem; 
-      animation: fadeIn 0.35s cubic-bezier(0.4, 0, 0.2, 1); 
-    }
-    @keyframes fadeIn { 
-      from { opacity: 0; transform: translateY(12px); } 
-      to { opacity: 1; transform: translateY(0); } 
-    }
-
-    .message-avatar { 
-      width: 36px; 
-      height: 36px; 
-      border-radius: 50%; 
-      display: flex; 
-      align-items: center; 
-      justify-content: center; 
-      flex-shrink: 0; 
-      font-size: 0.9rem;
-    }
-    .ai-avatar { 
-      background: linear-gradient(135deg, #818cf8, #6366f1); 
-      border: 1px solid rgba(255,255,255,0.15);
-      color: white; 
-    }
-    .user-avatar { 
-      background: rgba(255, 255, 255, 0.08); 
-      border: 1px solid rgba(255,255,255,0.1);
-      color: #a5b4fc; 
-    }
-
-    .message-content { 
-      flex: 1; 
-      display: flex;
-      flex-direction: column;
-    }
-    .message-header { 
-      display: flex; 
-      align-items: baseline; 
-      gap: 0.6rem; 
-      margin-bottom: 0.35rem; 
-    }
-    .message-sender { 
-      font-weight: 600; 
-      font-size: 0.88rem; 
-    }
-    .message-time { 
-      font-size: 0.7rem; 
-      color: rgba(255,255,255,0.35); 
-    }
-
-    /* Elegant Glassmorphic Message Bubbles */
-    .message-bubble {
-      padding: 0.9rem 1.2rem;
-      border-radius: 18px;
-      line-height: 1.6; 
-      font-size: 0.92rem; 
-      color: #e5e7eb; 
-      word-wrap: break-word;
-      display: inline-block;
-      max-width: 100%;
-    }
-    .message.user .message-bubble {
-  background: rgba(255,255,255,0.035);
-  border: 1px solid rgba(255,255,255,0.06);
-}
-    .message.assistant .message-bubble {
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-    }
-
-    /* Markdown Styling Inside Bubbles */
-    .message-bubble p { margin-bottom: 0.8rem; }
-    .message-bubble p:last-child { margin-bottom: 0; }
-    .message-bubble ul, .message-bubble ol { margin: 0.5rem 0 0.8rem 1.25rem; }
-    .message-bubble li { margin-bottom: 0.35rem; }
-    .message-bubble strong { color: #fff; font-weight: 600; }
-    .message-bubble em { color: #cbd5e1; }
-
-    /* Code Rendering Block (Tiled style) */
-    .code-block-wrapper {
-      margin: 0.8rem 0;
-      border-radius: 12px;
-      overflow: hidden;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    .code-header {
-      background: rgba(10, 10, 20, 0.85);
-      padding: 0.4rem 1rem;
-      font-size: 0.72rem;
-      color: rgba(255, 255, 255, 0.5);
-      font-family: monospace;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-    }
-    .copy-btn {
-      background: none;
-      border: none;
-      color: rgba(255,255,255,0.4);
-      cursor: pointer;
-      font-size: 0.72rem;
-      display: flex;
-      align-items: center;
-      gap: 0.3rem;
-      transition: color 0.15s;
-    }
-    .copy-btn:hover { color: #818cf8; }
-    .message-bubble pre { 
-      background: #0a0a14; 
-      padding: 1rem; 
-      overflow-x: auto; 
+    *, *::before, *::after {
       margin: 0;
-    }
-    .message-bubble pre code { 
-      background: transparent; 
-      padding: 0; 
-      border-radius: 0; 
-      font-family: 'Fira Code', Consolas, monospace;
-      font-size: 0.85rem;
-    }
-    .message-bubble code { 
-      background: rgba(255, 255, 255, 0.1); 
-      padding: 0.15rem 0.35rem; 
-      border-radius: 6px; 
-      font-family: monospace; 
-      font-size: 0.85rem;
-      color: #f43f5e;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
 
-    /* Typing indicators */
-    .typing-indicator { display: flex; align-items: center; gap: 0.6rem; padding: 0.2rem 0; }
-    .typing-dots { display: flex; gap: 4px; }
-    .typing-dot { width: 7px; height: 7px; background: #818cf8; border-radius: 50%; animation: bounce 1.4s infinite; }
-    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-    @keyframes bounce { 
-      0%, 60%, 100% { transform: translateY(0); opacity: 0.4; } 
-      30% { transform: translateY(-2px); opacity: 1; } 
-    }
-    .typing-text { font-size: 0.8rem; color: rgba(255,255,255,0.4); }
+    :root {
+      /* Apple system palette */
+      --accent: #5E5CE6;              /* systemIndigo (dark) */
+      --accent-hover: #7A78EB;
+      --accent-soft: rgba(94, 92, 230, 0.18);
+      --accent-ring: rgba(94, 92, 230, 0.32);
 
-    /* Input Area Locked inside Left Tile */
-    .input-area { 
-      padding: 1.2rem 1.5rem; 
-      border-top: 1px solid rgba(255, 255, 255, 0.06);
-    }
-    .input-wrapper { 
-      display: flex; 
-      align-items: center; 
-      gap: 0.5rem; 
-      background: rgba(255,255,255,0.02);
-      border: 1px solid rgba(255,255,255,0.08); 
-      border-radius: 20px; 
-      padding: 0.4rem 0.4rem 0.4rem 1rem; 
-      transition: all 0.2s ease;
-    }
-    .input-wrapper:focus-within {
-      background: rgba(255,255,255,0.035);
-      border-color: rgba(129, 140, 248, 0.4);
-      box-shadow: 0 0 15px rgba(129, 140, 248, 0.15);
-    }
-    .input-wrapper input { 
-      flex: 1; 
-      background: transparent; 
-      border: none; 
-      outline: none; 
-      color: #fff; 
-      font-size: 0.92rem; 
-      padding: 0.6rem 0; 
-    }
-    .input-wrapper input::placeholder { color: rgba(255,255,255,0.25); }
+      /* Text */
+      --text-primary: rgba(255, 255, 255, 0.96);
+      --text-secondary: rgba(235, 235, 245, 0.72);
+      --text-tertiary: rgba(235, 235, 245, 0.50);
+      --text-quaternary: rgba(235, 235, 245, 0.32);
 
-    * {
-  -webkit-font-smoothing: antialiased;
-}
-    
-    .send-btn { 
-      width: 38px; 
-      height: 38px; 
-      border-radius: 14px; 
-      background: rgba(255,255,255,0.08);
-border: 1px solid rgba(255,255,255,0.08); 
-      color: white; 
-      cursor: pointer; 
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .send-btn:hover {
-  transform: translateY(-1px);
-  background: rgba(255,255,255,0.12);
-}
-    .send-btn:disabled {
-      background: rgba(255,255,255,0.05);
-      color: rgba(255,255,255,0.2);
-      cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
+      /* Materials — vibrancyDark layers à la AppKit */
+      --mat-ultraThin: rgba(255, 255, 255, 0.05);
+      --mat-thin:      rgba(255, 255, 255, 0.08);
+      --mat-regular:   rgba(28, 28, 32, 0.55);
+      --mat-thick:     rgba(22, 22, 26, 0.68);
+      --mat-chrome:    rgba(36, 36, 42, 0.62);
+
+      /* Hairlines (0.5px feel) */
+      --line-soft: rgba(255, 255, 255, 0.08);
+      --line:      rgba(255, 255, 255, 0.12);
+      --line-strong: rgba(255, 255, 255, 0.18);
+
+      /* Shadows — ambient, not theatrical */
+      --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.18);
+      --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.18), 0 1px 2px rgba(0, 0, 0, 0.12);
+      --shadow-md: 0 12px 32px -8px rgba(0, 0, 0, 0.32), 0 2px 6px rgba(0, 0, 0, 0.18);
+      --shadow-lg: 0 24px 56px -16px rgba(0, 0, 0, 0.42), 0 4px 12px rgba(0, 0, 0, 0.20);
+      --inner-hi:  inset 0 0.5px 0 rgba(255, 255, 255, 0.14);
+
+      /* Blurs */
+      --blur-thin: blur(20px) saturate(180%);
+      --blur-reg:  blur(30px) saturate(180%);
+      --blur-thick:blur(40px) saturate(200%);
+
+      /* Motion */
+      --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+      --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+      --ease-soft: cubic-bezier(0.4, 0.0, 0.2, 1);
+
+      /* Geometry */
+      --r-sm: 8px;
+      --r-md: 12px;
+      --r-lg: 18px;
+      --r-xl: 22px;
+      --r-pill: 999px;
     }
 
-    /* Right Tile: Information / Settings Panel */
-    .side-panel-tile {
-      display: flex;
-      flex-direction: column;
-      padding: 1.5rem;
-      gap: 1.5rem;
+    html, body {
+      width: 100%;
       height: 100%;
+      overflow: hidden;
+      color: var(--text-primary);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+                   "Inter", system-ui, "Segoe UI", sans-serif;
+      font-size: 14px;
+      letter-spacing: -0.01em;
+      font-feature-settings: "ss01", "cv11";
+      background: transparent;
     }
 
-    .panel-section-title {
-      font-size: 0.78rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      color: rgba(255, 255, 255, 0.4);
-      margin-bottom: 0.8rem;
+    /* ----- WALLPAPER: macOS Sequoia aurora ----- */
+    body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: url('/static/images/bg_ai.jpg') center center / cover no-repeat;
+  z-index: -3;
+}
+
+    body::after {
+      content: "";
+      position: fixed; inset: -10%;
+      background:
+        radial-gradient(ellipse 60% 40% at 30% 30%, rgba(94, 92, 230, 0.22), transparent 60%),
+        radial-gradient(ellipse 50% 35% at 75% 70%, rgba(64, 200, 224, 0.16), transparent 60%),
+        radial-gradient(ellipse 40% 30% at 60% 20%, rgba(255, 159, 200, 0.10), transparent 60%);
+      filter: blur(40px);
+      animation: aurora 26s ease-in-out infinite alternate;
+      z-index: -2;
+      pointer-events: none;
     }
 
-    .ai-bio-card {
-      background: rgba(255,255,255,0.02);
-      border: 1px solid rgba(255,255,255,0.05);
-      border-radius: 16px;
-      padding: 1rem;
+    @keyframes aurora {
+      0%   { transform: translate3d(-1%, -1%, 0) scale(1);    opacity: 0.85; }
+      50%  { transform: translate3d( 2%,  1%, 0) scale(1.04); opacity: 1; }
+      100% { transform: translate3d( 1%,  2%, 0) scale(1.06); opacity: 0.92; }
     }
 
-    .ai-bio-header {
+    .wallpaper-sheen {
+      position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(255, 255, 255, 0.06), transparent 60%),
+        radial-gradient(ellipse 60% 40% at 50% 110%, rgba(0, 0, 0, 0.30), transparent 60%);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    /* Subtle grain for material credibility */
+    body > .wallpaper-sheen::after {
+      content: "";
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.035 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+      mix-blend-mode: overlay;
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    /* ============================================================
+       CAPSULE NAV — Safari/Finder floating toolbar
+       ============================================================ */
+    /* TOP NAV */
+.top-nav { position: fixed; top: 1rem; left: 50%; transform: translateX(-50%); z-index: 70; display: flex; align-items: center; gap: 1.5rem; background: rgba(255,255,255,0.05); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-radius: 50px; padding: 0.5rem 1.5rem; border: 0.5px solid rgba(255,255,255,0.1); overflow: visible; }
+.nav-brand { display: flex; align-items: center; gap: 0.4rem; color: #fff; text-decoration: none; font-weight: 600; letter-spacing: 4px; font-size: 0.9rem; }
+.nav-brand i { font-size: 0.9rem; }
+.nav-actions { display: flex; gap: 0.3rem; }
+.nav-link { color: rgba(255,255,255,0.5); text-decoration: none; font-size: 0.78rem; padding: 0.4rem 1rem; border-radius: 50px; transition:
+  background 0.3s ease,
+  color 0.3s ease,
+  transform 0.3s ease; }
+.nav-link:hover, .nav-link.active { color: #fff; background: rgba(255,255,255,0.1); }
+
+/* ========== PROFILE DROPDOWN ========== */
+.profile-wrap {
+  position: relative;
+}
+.nav-avatar {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.5);
+  font-size: 1.3rem;
+  cursor: pointer;
+  padding: 0.2rem;
+}
+.nav-avatar:hover {
+  color: #fff;
+}
+.profile-dropdown {
+  position: absolute;
+ top: 100%;
+left: 50%;
+transform: translateX(-50%);
+margin-top: 15px;
+  width: 240px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(16px) saturate(200%);
+  -webkit-backdrop-filter: blur(16px) saturate(200%);
+  border-radius: 20px;
+  padding: 1.2rem;
+  display: none;
+  z-index: 9999;
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+ box-shadow:
+    0 10px 30px rgba(0,0,0,0.25),
+    inset 0 1px 0 rgba(255,255,255,0.06);
+}
+.profile-dropdown.show {
+  display: block;
+}
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+.profile-avatar-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.profile-avatar-icon i {
+  font-size: 1.5rem;
+  color: rgba(255,255,255,0.4);
+}
+.profile-info {
+  overflow: hidden;
+}
+.profile-name {
+  display: block;
+  font-size: 0.9rem;
+  color: #fff;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.profile-email {
+  display: block;
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.35);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.profile-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.06);
+  margin: 0.8rem 0;
+}
+.profile-link {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 12px;
+  color: rgba(255,255,255,0.5);
+  text-decoration: none;
+  font-size: 0.82rem;
+  transition:
+  background 0.3s ease,
+  color 0.3s ease,
+  transform 0.3s ease;
+}
+.profile-link:hover {
+  background: rgba(255,255,255,0.05);
+  color: #fff;
+}
+.profile-link.logout {
+  color: #f87171;
+}
+.profile-link.logout:hover {
+  background: rgba(248,113,113,0.1);
+}
+
+
+    /* ============================================================
+       SIDEBAR — Finder / Music sidebar (vibrancy)
+       ============================================================ */
+    .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 62px;
+
+    background: var(--mat-thick);
+    backdrop-filter: var(--blur-thick);
+    -webkit-backdrop-filter: var(--blur-thick);
+
+    border-right: 0.5px solid var(--line-soft);
+
+    display: flex;
+    flex-direction: column;
+
+    padding: 12px 10px;
+
+    transition: width 0.32s var(--ease-out);
+    z-index: 900;
+    overflow: hidden;
+}
+    .sidebar:hover { width: 232px; }
+
+    .sidebar-menu {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.75rem;
+} 
+
+    .side-item {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
-      margin-bottom: 0.6rem;
-    }
-
-    .ai-bio-icon {
-      width: 32px;
+      gap: 12px;
       height: 32px;
-      border-radius: 10px;
-      background: rgba(129, 140, 248, 0.15);
-      border: 1px solid rgba(129, 140, 248, 0.3);
-      color: #818cf8;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.9rem;
+      padding: 0 10px;
+      margin: 1px 0;
+      color: var(--text-secondary);
+      text-decoration: none;
+      cursor: pointer;
+      white-space: nowrap;
+      border-radius: var(--r-md);
+      transition: background 0.16s var(--ease-soft), color 0.16s var(--ease-soft), transform 0.2s var(--ease-spring);
     }
 
-    .ai-bio-title h4 { font-size: 0.85rem; font-weight: 600; }
-    .ai-bio-title p { font-size: 0.7rem; color: rgba(255,255,255,0.35); }
-    .ai-bio-card > p { font-size: 0.78rem; color: rgba(255,255,255,0.6); line-height: 1.4; }
+    .side-item i {
+      font-size: 14px;
+      width: 22px;
+      min-width: 22px;
+      text-align: center;
+      color: var(--text-tertiary);
+      transition: color 0.16s var(--ease-soft);
+    }
 
-    /* Preset prompt cards styled as glass tiles */
-    .presets-grid {
+    .side-item span {
+      opacity: 0;
+      transform: translateX(-4px);
+      transition: opacity 0.2s var(--ease-soft), transform 0.24s var(--ease-out);
+      font-size: 13px;
+      font-weight: 510;
+      letter-spacing: -0.008em;
+    }
+    .sidebar:hover .side-item span {
+      opacity: 1;
+      transform: translateX(0);
+      transition-delay: 0.04s;
+    }
+
+    .side-item:hover {
+      background: rgba(255, 255, 255, 0.07);
+      color: var(--text-primary);
+    }
+    .side-item:hover i { color: var(--text-secondary); }
+    .side-item:active { transform: scale(0.98); }
+
+    .side-item.active {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: var(--inner-hi), 0 1px 3px rgba(94, 92, 230, 0.4);
+    }
+    .side-item.active i { color: #fff; }
+
+    .settings-item{
+    margin-top: auto;
+}
+
+    /* ============================================================
+       MAIN
+       ============================================================ */
+    .main-wrapper {
+      margin-left: 64px;
       display: flex;
       flex-direction: column;
-      gap: 0.6rem;
+      height: 100vh;
+      padding-top: 76px;
+      transition: margin-left 0.32s var(--ease-out);
     }
-    
-    .preset-tile {
-      background: rgba(255, 255, 255, 0.02);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      border-radius: 14px;
-      padding: 0.8rem 1rem;
-      cursor: pointer;
+
+    .chat-container {
+      max-width: 760px;
+      width: 100%;
+      margin: 0 auto;
+      flex: 1;
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      transition: all 0.2s ease;
+      flex-direction: column;
+      min-height: 0;
     }
 
-    .preset-tile:hover {
-      background: rgba(129, 140, 248, 0.06);
-      border-color: rgba(129, 140, 248, 0.2);
-      transform: translateX(4px);
-    }
-
-    .preset-left {
+    /* Messages scroll */
+    .messages-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 24px 16px 24px;
       display: flex;
-      align-items: center;
-      gap: 0.7rem;
+      flex-direction: column;
+      gap: 18px;
+      scroll-behavior: smooth;
+      mask-image: linear-gradient(180deg, transparent 0, #000 24px, #000 calc(100% - 8px), transparent);
+     background: radial-gradient(ellipse at top, rgba(255,255,255,0.02), transparent);
+  backdrop-filter: blur(2px); /* very subtle overall glass */
+    }
+    .messages-area::-webkit-scrollbar { width: 8px; }
+    .messages-area::-webkit-scrollbar-track { background: transparent; }
+    .messages-area::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.10);
+      border-radius: 999px;
+      border: 2px solid transparent;
+      background-clip: padding-box;
+    }
+    .messages-area::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.18); background-clip: padding-box; border: 2px solid transparent; }
+
+    /* MESSAGE ROWS */
+    .message {
+      display: flex;
+      gap: 10px;
+      max-width: 76%;
+      animation: msgIn 0.36s var(--ease-spring) both;
+    }
+    @keyframes msgIn {
+      from { opacity: 0; transform: translateY(6px) scale(0.985); }
+      to   { opacity: 1; transform: translateY(0)   scale(1); }
     }
 
-    .preset-icon {
-      font-size: 0.95rem;
+    .message.user {
+      align-self: flex-end;
+      flex-direction: row-reverse;
     }
 
-    .preset-info span {
-      display: block;
-      font-size: 0.8rem;
-      font-weight: 500;
+    /* Avatars */
+    .avatar {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--mat-thin);
+      backdrop-filter: blur(10px);
+      flex-shrink: 0;
+      border: 0.5px solid var(--line);
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+      box-shadow: var(--shadow-xs);
+    }
+    .message.assistant .avatar {
+      background: linear-gradient(135deg, #6E6CF0, #4946D6);
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.22);
+      box-shadow: 0 2px 8px rgba(94, 92, 230, 0.35), var(--inner-hi);
     }
 
-    .preset-info p {
-      font-size: 0.68rem;
-      color: rgba(255,255,255,0.35);
-    }
-
-    .preset-tile i.fa-chevron-right {
-      font-size: 0.7rem;
-      color: rgba(255,255,255,0.2);
-      transition: transform 0.2s;
-    }
-
-    .preset-tile:hover i.fa-chevron-right {
-      color: #818cf8;
-      transform: translateX(2px);
-    }
-
-    /* Welcome / Empty Grid (shows up when chat is empty) */
-    .welcome-container {
-      margin: auto;
-      text-align: center;
-      max-width: 500px;
-      padding: 2rem 1.5rem;
-      animation: fadeIn 0.4s ease;
-    }
-
-    .welcome-mascot {
-      width: 64px;
-      height: 64px;
+    /* BUBBLES — Apple Messages aesthetic */
+    .bubble {
+      padding: 10px 16px;
       border-radius: 20px;
-      background: rgba(129, 140, 248, 0.1);
-      border: 1.5px solid rgba(129, 140, 248, 0.35);
-      color: #818cf8;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.8rem;
-      margin: 0 auto 1.25rem auto;
-      box-shadow: 0 8px 24px rgba(129,140,248,0.15);
+      font-size: 14.5px;
+      line-height: 1.5;
+      font-weight: 400;
+      letter-spacing: -0.005em;
+      color: var(--text-primary);
+       background: rgba(255, 255, 255, 0.12);       /* very light, transparent */
+  backdrop-filter: blur(40px) saturate(180%);  /* strong frost blur */
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 0.5px solid rgba(255, 255, 255, 0.25);  /* brighter, more visible border */
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08), inset 0 0.5px 0 rgba(255, 255, 255, 0.2);
+      max-width: 100%;
+      overflow-wrap: break-word;
+ 
+  /* ... after above changes ... */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  color: rgba(255, 255, 255, 0.95);
+}
+ 
+    .message.user .bubble {
+  background: rgba(10, 132, 255, 0.28);      /* translucent system blue */
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  color: #fff;
+  border: 0.5px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1), inset 0 0.5px 0 rgba(255, 255, 255, 0.3);
+}
+
+    /* Markdown inside bubbles */
+    .bubble p { margin-bottom: 10px; }
+    .bubble p:last-child { margin-bottom: 0; }
+    .bubble ul, .bubble ol { margin: 8px 0 8px 22px; }
+    .bubble li { margin-bottom: 4px; }
+    .bubble strong { font-weight: 590; }
+    .bubble a { color: var(--accent-hover); text-decoration: none; border-bottom: 0.5px solid currentColor; }
+    .message.user .bubble a { color: #fff; }
+
+    .bubble pre {
+      background: rgba(10, 10, 16, 0.72);
+      padding: 12px 14px;
+      border-radius: 12px;
+      margin: 10px 0;
+      overflow-x: auto;
+      border: 0.5px solid var(--line-soft);
+      box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.04);
+    }
+    .bubble code {
+      font-family: "SF Mono", ui-monospace, "JetBrains Mono", Menlo, monospace;
+      font-size: 12.5px;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 1px 6px;
+      border-radius: 5px;
+      letter-spacing: 0;
+    }
+    .bubble pre code { background: transparent; padding: 0; border-radius: 0; }
+
+    /* ============================================================
+       INPUT — Spotlight / Messages dock
+       ============================================================ */
+    .input-wrapper {
+      padding: 12px 24px 24px 24px;
     }
 
-    .welcome-container h1 {
-      font-size: 1.6rem;
-      background: linear-gradient(135deg, #fff, #a5b4fc);
+    .input-glass {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--mat-chrome);
+      backdrop-filter: var(--blur-thick);
+      -webkit-backdrop-filter: var(--blur-thick);
+      border: 0.5px solid var(--line);
+      border-radius: var(--r-pill);
+      padding: 5px 5px 5px 18px;
+      box-shadow: var(--shadow-md), var(--inner-hi);
+      transition: border-color 0.2s var(--ease-soft),
+                  box-shadow 0.2s var(--ease-soft),
+                  background 0.2s var(--ease-soft);
+    }
+
+    .input-glass:focus-within {
+      border-color: var(--accent-ring);
+      box-shadow: 0 0 0 4px var(--accent-soft), var(--shadow-md), var(--inner-hi);
+      background: rgba(46, 46, 54, 0.66);
+    }
+
+    .input-glass input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text-primary);
+      font-size: 14.5px;
+      font-weight: 400;
+      letter-spacing: -0.008em;
+      padding: 11px 4px;
+      font-family: inherit;
+    }
+    .input-glass input::placeholder {
+      color: var(--text-tertiary);
+      font-weight: 400;
+    }
+
+    .send-btn {
+      background: var(--accent);
+      color: #fff;
+      border: 0.5px solid rgba(255, 255, 255, 0.22);
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      font-size: 12px;
+      box-shadow: 0 2px 8px rgba(94, 92, 230, 0.35), var(--inner-hi);
+      transition: transform 0.18s var(--ease-spring),
+                  background 0.18s var(--ease-soft),
+                  opacity 0.18s var(--ease-soft),
+                  box-shadow 0.18s var(--ease-soft);
+    }
+    .send-btn:disabled {
+      opacity: 0.4;
+      transform: scale(0.92);
+      cursor: not-allowed;
+      box-shadow: none;
+      background: rgba(255, 255, 255, 0.10);
+      border-color: transparent;
+    }
+    .send-btn:not(:disabled):hover {
+      background: var(--accent-hover);
+      transform: scale(1.06);
+      box-shadow: 0 4px 14px rgba(94, 92, 230, 0.5), var(--inner-hi);
+    }
+    .send-btn:not(:disabled):active { transform: scale(0.96); }
+
+    /* Typing indicator */
+    .typing-dots {
+      display: flex;
+      gap: 5px;
+      padding: 4px 2px;
+    }
+    .typing-dots span {
+      width: 6px; height: 6px;
+      background: var(--text-secondary);
+      border-radius: 50%;
+      animation: typingBounce 1.3s infinite ease-in-out both;
+    }
+    .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+    .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+    @keyframes typingBounce {
+      0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+      40%           { transform: scale(1);   opacity: 1; }
+    }
+
+    /* Welcome hero — Apple Intelligence greeting */
+    .welcome-hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 14px;
+      margin: 56px auto 16px;
+      padding: 0 24px;
+    }
+    .welcome-hero .avatar {
+      width: 64px; height: 64px;
+      font-size: 26px;
+      background: conic-gradient(from 200deg at 50% 50%,
+        #5E5CE6, #64D2FF, #BF5AF2, #FF9F0A, #5E5CE6);
+      color: #fff;
+      border: 0.5px solid rgba(255, 255, 255, 0.28);
+      box-shadow:
+        0 10px 28px rgba(94, 92, 230, 0.35),
+        0 0 0 6px rgba(94, 92, 230, 0.08),
+        var(--inner-hi);
+      margin: 0;
+      animation: heroPulse 6s ease-in-out infinite;
+    }
+    @keyframes heroPulse {
+      0%, 100% { transform: scale(1); filter: hue-rotate(0deg); }
+      50%      { transform: scale(1.04); filter: hue-rotate(20deg); }
+    }
+    .welcome-hero h2 {
+      font-weight: 620;
+      font-size: 28px;
+      letter-spacing: -0.022em;
+      background: linear-gradient(135deg, #ffffff 0%, #b8b8e6 100%);
       -webkit-background-clip: text;
       background-clip: text;
       color: transparent;
-      margin-bottom: 0.5rem;
-      font-weight: 700;
+      line-height: 1.15;
+    }
+    .welcome-hero p {
+      color: var(--text-secondary);
+      font-size: 14px;
+      font-weight: 400;
+      letter-spacing: -0.005em;
+      max-width: 360px;
     }
 
-    .welcome-container p {
-      font-size: 0.85rem;
-      color: rgba(255,255,255,0.4);
-      line-height: 1.5;
-    }
+    /* Selection */
+    ::selection { background: var(--accent-soft); color: #fff; }
 
-    /* System Status Widget */
-    .status-widget {
-      margin-top: auto;
-      background: rgba(255,255,255,0.01);
-      border: 1px solid rgba(255,255,255,0.04);
-      border-radius: 14px;
-      padding: 0.75rem 1rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.75rem;
-    }
-    .status-label { color: rgba(255,255,255,0.4); }
-    .status-val { color: rgba(255,255,255,0.7); font-family: monospace; }
-
-    /* RESPONSIVE LAYOUTS */
-    @media (max-width: 1024px) {
-      .tiled-container {
-        grid-template-columns: 1fr;
-      }
-      .side-panel-tile {
-        display: none; /* Hide features tile on mobile/tablets */
-      }
-    }
-    @media (max-width: 768px) {
-      .main-content { margin-left: 44px; }
-      .nav-actions { display: none; }
-      .tiled-container { padding-top: 5.5rem; }
-    }
-    @media (max-width: 480px) {
-      .main-content { margin-left: 0; }
-      .sidebar { transform: translateX(-100%); transition: transform 0.25s ease; }
-      .sidebar.open { transform: translateX(0); }
+    /* Responsive */
+    @media (max-width: 720px) {
+      .message { max-width: 92%; }
+      .capsule-nav { gap: 0; padding: 5px 6px 5px 12px; top: 12px; }
+      .nav-brand { margin-right: 2px; padding-right: 8px; font-size: 12.5px; }
+      .nav-links a { padding: 5px 9px; font-size: 12.5px; }
+      .main-wrapper { padding-top: 70px; }
+      .messages-area, .input-wrapper { padding-left: 16px; padding-right: 16px; }
+      .welcome-hero h2 { font-size: 24px; }
     }
   </style>
 </head>
 <body>
+  <div class="wallpaper-sheen"></div>
 
-  <!-- Static/Dynamic Background System -->
-  <div class="bg-wrapper">
-    <div class="bg-image" style="background-image: url('{{ url_for('static', filename='images/bg_todo.jpg') }}');"></div>
-    <div class="bg-overlay"></div>
-  </div>
-
-  <!-- TOP CAPSULE NAV (Matches Tasks Theme exactly) -->
+  <!-- TOP CAPSULE NAV -->
   <nav class="top-nav glass-refractive">
-    <a href="{{ url_for('main.home') }}" class="nav-brand"><i class="fas fa-eye"></i><span>aroku</span></a>
+    <a href="{{ url_for('main.home') }}" class="nav-brand">
+      <i class="fas fa-eye"></i><span>aroku</span>
+    </a>
     <div class="nav-actions">
-      <a href="{{ url_for('todo.dashboard') }}" class="nav-link">Tasks</a>
+      <a href="{{ url_for('todo.dashboard') }}" class="nav-link active">Tasks</a>
       <a href="#" class="nav-link">Projects</a>
-      <a href="#" class="nav-link active">AI Chat</a>
+      <a href="#" class="nav-link">chat</a>
     </div>
-    <div class="profile-wrap">
-      <button class="nav-avatar" id="profileBtn"><i class="fas fa-user-circle"></i></button>
-      <div class="profile-dropdown" id="profileDropdown">
-        <div class="profile-header">
-          <div class="profile-avatar-icon"><i class="fas fa-user-astronaut"></i></div>
-          <div class="profile-info">
-            <span class="profile-name">{{ current_user.username }}</span>
-            <span class="profile-email">{{ current_user.email }}</span>
-          </div>
-        </div>
-        <div class="profile-divider"></div>
-        <a href="#" class="profile-link"><i class="fas fa-cog"></i> Settings</a>
-        <a href="{{ url_for('auth.logout') }}" class="profile-link logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
-      </div>
+     <div class="profile-wrap">
+  <button class="nav-avatar" id="profileBtn">
+    <i class="fas fa-user-circle"></i>
+  </button>
+  <div class="profile-dropdown" id="profileDropdown">
+  <div class="profile-header">
+    <div class="profile-avatar-icon">
+      <i class="fas fa-user-circle"></i>
     </div>
+    <div class="profile-info">
+      <span class="profile-name">{{ current_user.username }}</span>
+      <span class="profile-email">{{ current_user.email }}</span>
+    </div>
+  </div>
+  <div class="profile-divider"></div>
+  <a href="#" class="profile-link"><i class="fas fa-cog"></i> Settings</a>
+  <a href="{{ url_for('auth.logout') }}" class="profile-link logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+</div>
+</div>
   </nav>
 
-  <!-- SIDEBAR (Matches Tasks Hover Theme exactly) -->
-  <aside class="sidebar" id="sidebar">
-    <a href="{{ url_for('main.home') }}" class="sb-brand"><i class="fas fa-eye"></i><span class="sb-label">aroku</span></a>
-    <nav class="sb-nav">
-      <a href="{{ url_for('todo.dashboard') }}" class="sb-link"><i class="fas fa-check-circle"></i><span class="sb-label">Tasks</span></a>
-      <a href="#" class="sb-link"><i class="fas fa-folder"></i><span class="sb-label">Projects</span></a>
-      <a href="#" class="sb-link active"><i class="fas fa-comment-dots"></i><span class="sb-label">AI Chat</span></a>
-    </nav>
-  </aside>
 
-  <!-- MAIN WORKSPACE -->
-  <main class="main-content">
-    <div class="tiled-container">
-      
-      <!-- CHAT INTERFACE TILE (LEFT) -->
-      <section class="chat-tile glass-refractive">
-        <div class="chat-tile-header">
-          <div class="chat-status-indicator">
-            <div class="status-pulse"></div>
-            <span class="chat-status-text">Echo Assistant</span>
-          </div>
-          <button class="clear-chat-btn" id="clearChatBtn">
-            <i class="fas fa-trash-alt"></i>
-            <span>Clear Thread</span>
-          </button>
-        </div>
+ <aside class="sidebar">
 
-        <div class="chat-scroll-viewport" id="chatContainer">
-          <div class="messages-wrapper" id="messagesWrapper">
-            <!-- Dynamically populated or Default Welcome screen -->
-          </div>
-        </div>
+    <div class="sidebar-menu">
+        <a href="{{ url_for('main.home') }}" class="side-item">
+            <i class="fa-solid fa-house"></i>
+            <span>Home</span>
+        </a>
 
-        <div class="input-area">
-          <div class="input-wrapper">
-            <input type="text" id="messageInput" placeholder="Send a message or run a design logic prompt..." autocomplete="off">
-            <button class="send-btn" id="sendBtn" disabled><i class="fas fa-arrow-up"></i></button>
+        <a href="#" class="side-item active">
+            <i class="fa-solid fa-message"></i>
+            <span>Chat Sessions</span>
+        </a>
+
+        <a href="#" class="side-item">
+            <i class="fa-solid fa-bolt"></i>
+            <span>Presets</span>
+        </a>
+    </div>
+
+    <a href="#" class="side-item settings-item">
+        <i class="fa-solid fa-gear"></i>
+        <span>Settings</span>
+    </a>
+
+</aside>
+
+  <main class="main-wrapper">
+    <div class="chat-container">
+      <div class="messages-area" id="chatArea">
+        <div class="message assistant" style="align-self: center; max-width: 100%; justify-content: center;">
+          <div class="welcome-hero">
+            <div class="avatar"><i class="fa-solid fa-sparkles"></i></div>
+            <h2>How can I help you today?</h2>
+            <p>Ask about code, design, or architecture — powered by Liquid Intelligence.</p>
           </div>
         </div>
-      </section>
+      </div>
 
-      <!-- INFORMATION / PRESET TILES (RIGHT) -->
-      <aside class="side-panel-tile glass-refractive">
-        <div>
-          <h3 class="panel-section-title">Active AI Profile</h3>
-          <div class="ai-bio-card">
-            <div class="ai-bio-header">
-              <div class="ai-bio-icon"><i class="fas fa-bolt"></i></div>
-              <div class="ai-bio-title">
-                <h4>Owl Alpha</h4>
-                <p>Status: Active • Fast</p>
-              </div>
-            </div>
-            <p>An advanced developer intelligence agent designed to program clean applications and write highly optimized code.</p>
-          </div>
+      <div class="input-wrapper">
+        <div class="input-glass">
+          <input type="text" id="chatInput" placeholder="Message Echo AI…" autocomplete="off">
+          <button class="send-btn" id="sendBtn" disabled aria-label="Send"><i class="fa-solid fa-arrow-up"></i></button>
         </div>
-
-        <div>
-          <h3 class="panel-section-title">Preset Prompt Tiles</h3>
-          <div class="presets-grid">
-            
-            <div class="preset-tile" data-prompt="Design an elegant CSS glassmorphic form.">
-              <div class="preset-left">
-                <span class="preset-icon">🎨</span>
-                <div class="preset-info">
-                  <span>Glassmorphism UX</span>
-                  <p>Generate styling variables</p>
-                </div>
-              </div>
-              <i class="fas fa-chevron-right"></i>
-            </div>
-
-            <div class="preset-tile" data-prompt="Explain decorators in Python with simple code snippets.">
-              <div class="preset-left">
-                <span class="preset-icon">🐍</span>
-                <div class="preset-info">
-                  <span>Python Architecture</span>
-                  <p>Understand complex logic</p>
-                </div>
-              </div>
-              <i class="fas fa-chevron-right"></i>
-            </div>
-
-            <div class="preset-tile" data-prompt="Refactor a fast sorting function in JavaScript.">
-              <div class="preset-left">
-                <span class="preset-icon">⚙️</span>
-                <div class="preset-info">
-                  <span>Algorithm Clean</span>
-                  <p>Optimize operations</p>
-                </div>
-              </div>
-              <i class="fas fa-chevron-right"></i>
-            </div>
-
-          </div>
-        </div>
-
-        <div class="status-widget">
-          <span class="status-label">Engine Model:</span>
-          <span class="status-val">owl-alpha</span>
-        </div>
-      </aside>
-
+      </div>
     </div>
   </main>
 
   <script>
-    // CLEAN SYNCHRONOUS MARKDOWN PARSER
-    function parseMarkdown(text) {
-      if (!text) return '';
-      
-      // Escape HTML to block injection vectors
-      let html = text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
+    (function() {
+      // --- DOM elements (unchanged logic, only visuals enhanced)
+      const chatInput = document.getElementById('chatInput');
+      const sendBtn = document.getElementById('sendBtn');
+      const chatArea = document.getElementById('chatArea');
+      let isWaiting = false;
 
-      // Code blocks with syntax wrappers & embedded Copy Button
-      html = html.replace(/```(\w*)\n([\s\S]*?)```/g, function(match, lang, code) {
-        const cleanLang = lang.trim() || 'plaintext';
-        const cleanCode = code.trim();
-        return `<div class="code-block-wrapper">
-                  <div class="code-header">
-                    <span>${cleanLang.toUpperCase()}</span>
-                    <button class="copy-btn" onclick="copyCode(this)"><i class="far fa-copy"></i> Copy</button>
-                  </div>
-                  <pre><code class="language-${cleanLang}">${cleanCode}</code></pre>
-                </div>`;
-      });
+      // scroll helper
+      const scrollToBottom = () => {
+        chatArea.scrollTo({ top: chatArea.scrollHeight, behavior: 'smooth' });
+      };
 
-      // Inline code snippets
-      html = html.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+      // MARKDOWN + syntax highlight (safely)
+      const renderAssistantContent = (text) => {
+        try {
+          let html = marked.parse(text);
+          const clean = DOMPurify.sanitize(html);
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = clean;
+          tempDiv.querySelectorAll('pre code').forEach((block) => {
+            hljs.highlightElement(block);
+          });
+          return tempDiv.innerHTML;
+        } catch (e) {
+          return DOMPurify.sanitize(text);
+        }
+      };
 
-      // Font styling constructs
-      html = html.replace(/\*\*([\s\S]+?)\*\*/g, '<strong>$1</strong>');
-      html = html.replace(/\*([\s\S]+?)\*//g, '<em>$1</em>');
+      // Append message to chat (role: user/assistant)
+      const appendMessage = (role, text) => {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `message ${role}`;
 
-      // Simple list block conversion
-      html = html.replace(/^\s*[-*]\s+(.+)$/gm, '<li>$1</li>');
-      html = html.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
-
-      // Line splits and dynamic spacing
-      html = html.replace(/\n/g, '<br>');
-
-      return html;
-    }
-
-    // Code copy mechanism
-    function copyCode(btn) {
-      const wrapper = btn.closest('.code-block-wrapper');
-      const code = wrapper.querySelector('pre code').innerText;
-      navigator.clipboard.writeText(code).then(() => {
-        btn.innerHTML = `<i class="fas fa-check" style="color:#10b981;"></i> <span style="color:#10b981;">Copied</span>`;
-        setTimeout(() => {
-          btn.innerHTML = `<i class="far fa-copy"></i> Copy`;
-        }, 2000);
-      });
-    }
-
-    // DOM Nodes
-    const messagesWrapper = document.getElementById('messagesWrapper');
-    const chatContainer = document.getElementById('chatContainer');
-    const messageInput = document.getElementById('messageInput');
-    const sendBtn = document.getElementById('sendBtn');
-    const clearChatBtn = document.getElementById('clearChatBtn');
-    const sidebar = document.getElementById('sidebar');
-    
-    let isWaiting = false;
-
-    // Enable/Disable Send button state dynamically
-    messageInput.addEventListener('input', () => {
-      sendBtn.disabled = !messageInput.value.trim() || isWaiting;
-    });
-
-    function addMessage(role, content, isError = false) {
-      // Eliminate the landing screen if it remains
-      const welcome = document.getElementById('welcomeMsg');
-      if (welcome) welcome.remove();
-
-      const div = document.createElement('div');
-      div.className = `message ${role}`;
-      const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      
-      const avatarHtml = `
-        <div class="message-avatar ${role === 'user' ? 'user-avatar' : 'ai-avatar'}">
-          <i class="fas ${role === 'user' ? 'fa-user-astronaut' : 'fa-brain'}"></i>
-        </div>
-      `;
-
-      // Construct parsed body text
-      const outputHTML = role === 'assistant' ? parseMarkdown(content) : parseMarkdown(content);
-      
-      div.innerHTML = avatarHtml + `
-        <div class="message-content">
-          <div class="message-header">
-            <span class="message-sender">${role === 'user' ? 'You' : 'Echo'}</span>
-            <span class="message-time">${time}</span>
-          </div>
-          <div class="message-bubble">${outputHTML}</div>
-        </div>
-      `;
-
-      if (isError) {
-        div.querySelector('.message-bubble').style.color = '#f87171';
-        div.querySelector('.message-bubble').style.borderColor = 'rgba(239, 68, 68, 0.3)';
-        div.querySelector('.message-bubble').style.background = 'rgba(239, 68, 68, 0.05)';
-      }
-
-      messagesWrapper.appendChild(div);
-      chatContainer.scrollTop = chatContainer.scrollHeight;
-
-      // Trigger highlight JS initialization
-      if (role === 'assistant') {
-        div.querySelectorAll('pre code').forEach(block => hljs.highlightElement(block));
-      }
-    }
-
-    // State mechanics
-    function showTyping() {
-      const existing = document.getElementById('typingMsg');
-      if (existing) existing.remove();
-
-      const typingDiv = document.createElement('div');
-      typingDiv.id = 'typingMsg';
-      typingDiv.className = 'message assistant';
-      typingDiv.innerHTML = `
-        <div class="message-avatar ai-avatar"><i class="fas fa-brain"></i></div>
-        <div class="message-content">
-          <div class="message-header">
-            <span class="message-sender">Echo</span>
-          </div>
-          <div class="message-bubble" style="padding: 0.6rem 1rem;">
-            <div class="typing-indicator">
-              <div class="typing-dots">
-                <span class="typing-dot"></span>
-                <span class="typing-dot"></span>
-                <span class="typing-dot"></span>
-              </div>
-              <span class="typing-text">thinking</span>
-            </div>
-          </div>
-        </div>
-      `;
-      messagesWrapper.appendChild(typingDiv);
-      chatContainer.scrollTop = chatContainer.scrollHeight;
-    }
-
-    function hideTyping() {
-      const typing = document.getElementById('typingMsg');
-      if (typing) typing.remove();
-    }
-
-    function showWelcome() {
-      messagesWrapper.innerHTML = '';
-      const welcome = document.createElement('div');
-      welcome.id = 'welcomeMsg';
-      welcome.className = 'welcome-container';
-      welcome.innerHTML = `
-        <div class="welcome-mascot"><i class="fas fa-magic"></i></div>
-        <h1>Design Workspace</h1>
-        <p>Your workspace is online. Feed a prompt, check syntax parameters, or debug interface blueprints natively with the agent.</p>
-      `;
-      messagesWrapper.appendChild(welcome);
-    }
-
-    async function sendMessage() {
-      const text = messageInput.value.trim();
-      if (!text || isWaiting) return;
-
-      isWaiting = true;
-      messageInput.disabled = true;
-      sendBtn.disabled = true;
-
-      addMessage('user', text);
-      messageInput.value = '';
-      showTyping();
-
-      try {
-        const response = await fetch('/ai/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: text })
-        });
-        
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const data = await response.json();
-        
-        hideTyping();
-        if (data.reply) {
-          addMessage('assistant', data.reply);
+        let avatarIcon = role === 'user' ? 'fa-user' : 'fa-sparkles';
+        let bubbleHTML = '';
+        if (role === 'user') {
+          const safeText = document.createElement('div');
+          safeText.textContent = text;
+          bubbleHTML = safeText.innerHTML;
         } else {
-          throw new Error('No clean response data parsed from client context');
+          bubbleHTML = renderAssistantContent(text);
         }
-      } catch (err) {
-        hideTyping();
-        addMessage('assistant', `⚠️ Failed to fetch pipeline response: ${err.message}. Ensure engine route is hosted at /ai/chat.`, true);
-      } finally {
-        isWaiting = false;
-        messageInput.disabled = false;
-        messageInput.focus();
-        messageInput.dispatchEvent(new Event('input'));
-      }
-    }
 
-    // Keyboard trigger routing
-    messageInput.addEventListener('keydown', e => {
-      if (e.key === 'Enter') {
-        sendMessage();
-      }
-    });
-    sendBtn.addEventListener('click', sendMessage);
+        msgDiv.innerHTML = `
+          <div class="avatar"><i class="fa-solid ${avatarIcon}"></i></div>
+          <div class="bubble">${bubbleHTML}</div>
+        `;
+        chatArea.appendChild(msgDiv);
+        scrollToBottom();
+      };
 
-    // Prompt Presets Interaction
-    document.querySelectorAll('.preset-tile').forEach(tile => {
-      tile.addEventListener('click', () => {
-        const prompt = tile.getAttribute('data-prompt');
-        if (prompt && !isWaiting) {
-          messageInput.value = prompt;
-          messageInput.dispatchEvent(new Event('input'));
-          sendMessage();
+      // Typing indicator (preserved)
+      let typingElement = null;
+      const showTyping = () => {
+        if (typingElement) typingElement.remove();
+        typingElement = document.createElement('div');
+        typingElement.className = 'message assistant';
+        typingElement.innerHTML = `
+          <div class="avatar"><i class="fa-solid fa-sparkles"></i></div>
+          <div class="bubble">
+            <div class="typing-dots"><span></span><span></span><span></span></div>
+          </div>
+        `;
+        chatArea.appendChild(typingElement);
+        scrollToBottom();
+      };
+
+      const removeTyping = () => {
+        if (typingElement && typingElement.parentNode) typingElement.remove();
+        typingElement = null;
+      };
+
+      let welcomeCleared = false;
+      const clearWelcomeIfNeeded = () => {
+        if (!welcomeCleared && chatArea.children.length === 1 && chatArea.children[0].querySelector('.welcome-hero')) {
+          chatArea.innerHTML = '';
+          welcomeCleared = true;
+        }
+      };
+
+      // Core send logic (unchanged API, backend route)
+      const handleSend = async () => {
+        const rawMessage = chatInput.value.trim();
+        if (!rawMessage || isWaiting) return;
+
+        clearWelcomeIfNeeded();
+
+        chatInput.value = '';
+        sendBtn.disabled = true;
+        isWaiting = true;
+
+        appendMessage('user', rawMessage);
+        showTyping();
+
+        try {
+          const response = await fetch('/ai/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: rawMessage })
+          });
+
+          if (!response.ok) {
+            let errorDetail = `Server responded with status ${response.status}`;
+            try {
+              const errData = await response.json();
+              errorDetail = errData.error || errData.message || errorDetail;
+            } catch (_) {}
+            throw new Error(errorDetail);
+          }
+
+          const data = await response.json();
+          removeTyping();
+          const assistantReply = data.reply || data.response || "Received, but no reply text.";
+          appendMessage('assistant', assistantReply);
+        } catch (err) {
+          removeTyping();
+          console.error('Echo AI fetch error:', err);
+          appendMessage('assistant', `⚠️ **Connection issue** — Backend endpoint \`/ai/chat\` unreachable.\n\nMake sure Flask route is running.\n\n*Error detail:* ${err.message}`);
+        } finally {
+          isWaiting = false;
+          chatInput.focus();
+          sendBtn.disabled = (chatInput.value.trim() === '') || isWaiting;
+        }
+      };
+
+      const updateSendState = () => {
+        sendBtn.disabled = (chatInput.value.trim() === '') || isWaiting;
+      };
+
+      chatInput.addEventListener('input', () => {
+        updateSendState();
+      });
+
+      chatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          if (!sendBtn.disabled) handleSend();
         }
       });
-    });
 
-    // Clear Conversational Viewport
-    clearChatBtn.addEventListener('click', () => {
-      showWelcome();
-    });
+      sendBtn.addEventListener('click', handleSend);
 
-    // Profile Capsule Dropdown Interaction (Exact logic from tasks page)
-    const profileBtn = document.getElementById('profileBtn');
-    const profileDropdown = document.getElementById('profileDropdown');
-    
-    if (profileBtn && profileDropdown) {
-      profileBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        profileDropdown.classList.toggle('show');
-      });
-      document.addEventListener('click', () => {
-        profileDropdown.classList.remove('show');
-      });
-      profileDropdown.addEventListener('click', (e) => {
-        e.stopPropagation();
-      });
-    }
+      updateSendState();
+      chatInput.focus();
 
-    // Responsive Mobile Drawer Actions
-    function initMobileNav() {
-      if (window.innerWidth <= 480 && !document.querySelector('.mobile-toggle')) {
-        const topNav = document.querySelector('.top-nav');
-        const btn = document.createElement('button');
-        btn.innerHTML = '<i class="fas fa-bars"></i>';
-        btn.className = 'mobile-toggle';
-        btn.style.cssText = 'background:none; border:none; color:#fff; font-size:1.15rem; margin-right:0.6rem; cursor:pointer; outline:none;';
-        topNav.insertBefore(btn, topNav.firstChild);
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          sidebar.classList.toggle('open');
-        });
-        document.addEventListener('click', () => {
-          sidebar.classList.remove('open');
-        });
-        sidebar.addEventListener('click', (e) => {
-          e.stopPropagation();
-        });
-      } else if (window.innerWidth > 480) {
-        const btn = document.querySelector('.mobile-toggle');
-        if (btn) btn.remove();
-        sidebar.classList.remove('open');
-      }
-    }
-    
-    window.addEventListener('resize', initMobileNav);
-    initMobileNav();
+      const observer = new MutationObserver(() => scrollToBottom());
+      observer.observe(chatArea, { childList: true, subtree: false });
+    })();
 
-    // Start Chat Cycle
-    showWelcome();
-    messageInput.focus();
+    // Profile dropdown
+const profileBtn = document.getElementById('profileBtn');
+const profileDropdown = document.getElementById('profileDropdown');
+
+if (profileBtn && profileDropdown) {
+
+  profileBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    profileDropdown.classList.toggle('show');
+  });
+
+  profileDropdown.addEventListener('click', function(e) {
+    e.stopPropagation();
+  });
+
+  document.addEventListener('click', function() {
+    profileDropdown.classList.remove('show');
+  });
+
+}
   </script>
 </body>
 </html>
